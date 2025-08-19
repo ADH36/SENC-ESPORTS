@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import userService from './userService.js';
+import userService from './userService';
 
 export interface LoginCredentials {
   email: string;
