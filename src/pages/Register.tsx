@@ -233,3 +233,32 @@ export default function Register() {
                     Privacy Policy
                   </Link>
                 </label>
+              </div>
+              
+              <Button
+                type="submit"
+                fullWidth
+                loading={isLoading}
+                disabled={isLoading}
+              >
+                Create Account
+              </Button>
+            </form>
+            
+            <div className="mt-6 text-center">
+              <p className="text-gray-400">
+                Already have an account?{' '}
+                <Link
+                  to="/login"
+                  className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                >
+                  Sign in
+                </Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
