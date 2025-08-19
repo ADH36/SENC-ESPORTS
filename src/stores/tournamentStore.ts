@@ -186,4 +186,93 @@ export const useTournamentStore = create<TournamentState>((set, get) => ({
       
       set((state) => ({
         tournaments: state.tournaments.filter(t => t.id !== id),
-        currentTournament: state.currentTournament?.id === i
+        currentTournament: state.currentTournament?.id === id 
+          ? null 
+          : state.currentTournament,
+        isLoading: false,
+        error: null
+      }));
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Failed to delete tournament';
+      set({
+        isLoading: false,
+        error: errorMessage
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  registerForTournament: async (tournamentId: string, squadId?: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await axios.post(`/api/tournaments/${tournamentId}/register`, {
+        squadId
+      });
+      
+      // Refresh tournament data to get updated registration count
+      await get().fetchTournamentById(tournamentId);
+      
+      set({
+        isLoading: false,
+        error: null
+      });
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Failed to register for tournament';
+      set({
+        isLoading: false,
+        error: errorMessage
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  fetchTournamentRegistrations: async (tournamentId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axios.get(`/api/tournaments/${tournamentId}/registrations`);
+      const registrations = response.data.data.registrations;
+      
+      set({
+        registrations,
+        isLoading: false,
+        error: null
+      });
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Failed to fetch registrations';
+      set({
+        isLoading: false,
+        error: errorMessage
+      });
+    }
+  },
+
+  updateRegistrationStatus: async (registrationId: string, status: 'approved' | 'rejected') => {
+    set({ isLoading: true, error: null });
+    try {
+      await axios.put(`/api/tournaments/registrations/${registrationId}`, {
+        status
+      });
+      
+      set((state) => ({
+        registrations: state.registrations.map(r => 
+          r.id === registrationId ? { ...r, status } : r
+        ),
+        isLoading: false,
+        error: null
+      }));
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Failed to update registration status';
+      set({
+        isLoading: false,
+        error: errorMessage
+      });
+      throw new Error(errorMessage);
+    }
+  },
+
+  setCurrentTournament: (tournament: Tournament | null) => {
+    set({ currentTournament: tournament });
+  },
+
+  clearError: () => set({ error: null })
+}));
