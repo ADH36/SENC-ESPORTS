@@ -17,7 +17,8 @@ module.exports = {
       extension: 'cjs'
     },
     seeds: {
-      directory: './seeds'
+      directory: './seeds',
+      extension: 'cjs'
     }
   },
 

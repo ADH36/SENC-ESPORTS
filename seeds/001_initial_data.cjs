@@ -1,7 +1,6 @@
-import type { Knex } from 'knex';
-import bcrypt from 'bcrypt';
+const bcrypt = require('bcrypt');
 
-export async function seed(knex: Knex): Promise<void> {
+exports.seed = async function(knex) {
   // Clear existing entries
   await knex('tournament_registrations').del();
   await knex('match_participants').del();
@@ -17,10 +16,16 @@ export async function seed(knex: Knex): Promise<void> {
   const playerPasswordHash = await bcrypt.hash('player123', 10);
   const managerPasswordHash = await bcrypt.hash('manager123', 10);
 
+  // Generate UUIDs for users (using crypto.randomUUID for consistency)
+  const { randomUUID } = require('crypto');
+  const adminUserId = randomUUID();
+  const playerUserId = randomUUID();
+  const managerUserId = randomUUID();
+
   // Insert users
-  const [adminUser] = await knex('users').insert([
+  await knex('users').insert([
     {
-      id: knex.raw('(UUID())'),
+      id: adminUserId,
       email: 'admin@esports.com',
       username: 'admin',
       password_hash: adminPasswordHash,
@@ -28,11 +33,11 @@ export async function seed(knex: Knex): Promise<void> {
       last_name: 'Administrator',
       role: 'admin'
     }
-  ]).returning('id');
+  ]);
 
-  const [playerUser] = await knex('users').insert([
+  await knex('users').insert([
     {
-      id: knex.raw('(UUID())'),
+      id: playerUserId,
       email: 'player@esports.com',
       username: 'player1',
       password_hash: playerPasswordHash,
@@ -40,11 +45,11 @@ export async function seed(knex: Knex): Promise<void> {
       last_name: 'Player',
       role: 'player'
     }
-  ]).returning('id');
+  ]);
 
-  const [managerUser] = await knex('users').insert([
+  await knex('users').insert([
     {
-      id: knex.raw('(UUID())'),
+      id: managerUserId,
       email: 'manager@esports.com',
       username: 'manager1',
       password_hash: managerPasswordHash,
@@ -52,26 +57,29 @@ export async function seed(knex: Knex): Promise<void> {
       last_name: 'Manager',
       role: 'manager'
     }
-  ]).returning('id');
+  ]);
+
+  // Generate UUID for squad
+  const squadId = randomUUID();
 
   // Insert sample squad
-  const [squad] = await knex('squads').insert([
+  await knex('squads').insert([
     {
-      id: knex.raw('(UUID())'),
+      id: squadId,
       name: 'Elite Gamers',
       description: 'Professional esports team',
       game: 'League of Legends',
-      captain_id: playerUser.id,
+      captain_id: playerUserId,
       is_recruiting: true
     }
-  ]).returning('id');
+  ]);
 
   // Insert squad member
   await knex('squad_members').insert([
     {
-      id: knex.raw('(UUID())'),
-      squad_id: squad.id,
-      user_id: playerUser.id,
+      id: randomUUID(),
+      squad_id: squadId,
+      user_id: playerUserId,
       role: 'captain'
     }
   ]);
@@ -79,7 +87,7 @@ export async function seed(knex: Knex): Promise<void> {
   // Insert sample tournament
   await knex('tournaments').insert([
     {
-      id: knex.raw('(UUID())'),
+      id: randomUUID(),
       name: 'Spring Championship 2024',
       game: 'League of Legends',
       format: 'single_elimination',
@@ -88,8 +96,8 @@ export async function seed(knex: Knex): Promise<void> {
       rules: 'Standard tournament rules apply. All participants must be registered players.',
       registration_deadline: knex.raw('DATE_ADD(NOW(), INTERVAL 7 DAY)'),
       start_date: knex.raw('DATE_ADD(NOW(), INTERVAL 14 DAY)'),
-      manager_id: managerUser.id,
+      manager_id: managerUserId,
       status: 'open'
     }
   ]);
-}
+};
