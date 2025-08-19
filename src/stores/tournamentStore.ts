@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-interface Tournament {
+export interface Tournament {
   id: string;
   name: string;
   game: string;
   format: 'single_elimination' | 'double_elimination' | 'round_robin' | 'swiss';
   maxParticipants: number;
+  currentParticipants?: number;
   prizePool?: number;
   rules?: string;
   registrationDeadline: string;
@@ -49,9 +50,11 @@ interface TournamentState {
   error: string | null;
   pagination: {
     page: number;
+    currentPage: number;
     limit: number;
     total: number;
     totalPages: number;
+    hasMore: boolean;
   };
   
   // Actions
@@ -75,9 +78,11 @@ export const useTournamentStore = create<TournamentState>((set, get) => ({
   error: null,
   pagination: {
     page: 1,
+    currentPage: 1,
     limit: 20,
     total: 0,
-    totalPages: 0
+    totalPages: 0,
+    hasMore: false
   },
 
   fetchTournaments: async (page = 1, status, game) => {
@@ -92,11 +97,17 @@ export const useTournamentStore = create<TournamentState>((set, get) => ({
       if (game) params.append('game', game);
       
       const response = await axios.get(`/api/tournaments?${params}`);
-      const { tournaments, pagination } = response.data.data;
+      const { tournaments, pagination: paginationData } = response.data.data;
+      
+      const updatedPagination = {
+        ...paginationData,
+        currentPage: page,
+        hasMore: page < paginationData.totalPages
+      };
       
       set({
         tournaments,
-        pagination,
+        pagination: updatedPagination,
         isLoading: false,
         error: null
       });

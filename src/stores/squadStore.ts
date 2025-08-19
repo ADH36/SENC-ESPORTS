@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-interface Squad {
+export interface Squad {
   id: string;
   name: string;
   description?: string;
@@ -44,9 +44,11 @@ interface SquadState {
   error: string | null;
   pagination: {
     page: number;
+    currentPage: number;
     limit: number;
     total: number;
     totalPages: number;
+    hasMore: boolean;
   };
   
   // Actions
@@ -73,9 +75,11 @@ export const useSquadStore = create<SquadState>((set, get) => ({
   error: null,
   pagination: {
     page: 1,
+    currentPage: 1,
     limit: 20,
     total: 0,
-    totalPages: 0
+    totalPages: 0,
+    hasMore: false
   },
 
   fetchSquads: async (page = 1, game) => {
@@ -89,11 +93,17 @@ export const useSquadStore = create<SquadState>((set, get) => ({
       if (game) params.append('game', game);
       
       const response = await axios.get(`/api/squads?${params}`);
-      const { squads, pagination } = response.data.data;
+      const { squads, pagination: paginationData } = response.data.data;
+      
+      const updatedPagination = {
+        ...paginationData,
+        currentPage: page,
+        hasMore: page < paginationData.totalPages
+      };
       
       set({
         squads,
-        pagination,
+        pagination: updatedPagination,
         isLoading: false,
         error: null
       });
