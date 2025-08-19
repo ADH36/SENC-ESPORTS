@@ -48,3 +48,22 @@ export function CardTitle({ children, className = '' }: { children: ReactNode; c
       {children}
     </h3>
   );
+}
+
+// Card Content component
+export function CardContent({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={`text-gray-300 ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+// Card Footer component
+export function CardFooter({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={`border-t border-gray-700 pt-4 mt-4 ${className}`}>
+      {children}
+    </div>
+  );
+}
