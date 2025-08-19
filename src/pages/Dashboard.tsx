@@ -30,14 +30,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      fetchTournaments({ page: 1, limit: 5 });
+      fetchTournaments(1);
       fetchUserSquads();
     }
   }, [isAuthenticated, user, fetchTournaments, fetchUserSquads]);
 
   useEffect(() => {
     // Calculate stats from fetched data
-    const activeTournaments = tournaments.filter(t => t.status === 'active').length;
+    const activeTournaments = tournaments.filter(t => t.status === 'in_progress').length;
     setStats({
       totalTournaments: tournaments.length,
       activeTournaments,
@@ -238,8 +238,8 @@ export default function Dashboard() {
                         </div>
                         <div className="flex items-center space-x-2">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            tournament.status === 'active' ? 'bg-green-900 text-green-300' :
-                            tournament.status === 'upcoming' ? 'bg-blue-900 text-blue-300' :
+                            tournament.status === 'in_progress' ? 'bg-green-900 text-green-300' :
+                            tournament.status === 'open' ? 'bg-blue-900 text-blue-300' :
                             'bg-gray-600 text-gray-300'
                           }`}>
                             {tournament.status}

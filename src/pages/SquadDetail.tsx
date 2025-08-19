@@ -194,7 +194,7 @@ export default function SquadDetail() {
                         <MapPin className="w-4 h-4 mr-1" />
                         <span>{currentSquad.game}</span>
                       </div>
-                      {currentSquad.isPrivate && (
+                      {!currentSquad.isRecruiting && (
                         <span className="px-2 py-1 bg-yellow-900 text-yellow-300 rounded-full text-xs font-medium">
                           Private
                         </span>
@@ -229,7 +229,7 @@ export default function SquadDetail() {
                         <span>Captain</span>
                       </div>
                       <span className="text-white">
-                        {currentSquad.captainName || 'Unknown'}
+                        {currentSquad.captain ? `${currentSquad.captain.firstName} ${currentSquad.captain.lastName}` : 'Unknown'}
                       </span>
                     </div>
                     
@@ -239,7 +239,7 @@ export default function SquadDetail() {
                         <span>Members</span>
                       </div>
                       <span className="text-white">
-                        {squadMembers.length}/{currentSquad.maxMembers || 5}
+                        {squadMembers.length}/5
                       </span>
                     </div>
                     
@@ -351,7 +351,7 @@ export default function SquadDetail() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {!isMember && isAuthenticated && user?.role === 'player' && !currentSquad.isPrivate && (
+                  {!isMember && isAuthenticated && user?.role === 'player' && currentSquad.isRecruiting && (
                     <Button fullWidth onClick={handleJoin}>
                       <UserPlus className="w-4 h-4 mr-2" />
                       Join Squad
