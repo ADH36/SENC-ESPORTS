@@ -60,3 +60,8 @@ export default function Tournaments() {
     }
   };
 
+  const loadMore = () => {
+    if (pagination.hasMore && !isLoading) {
+      fetchTournaments({ 
+        page: pagination.currentPage + 1, 
+        limit:
