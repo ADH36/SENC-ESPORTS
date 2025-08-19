@@ -1,6 +1,4 @@
-import type { Knex } from 'knex';
-
-export async function up(knex: Knex): Promise<void> {
+exports.up = async function(knex) {
   return knex.schema.createTable('match_participants', (table) => {
     table.uuid('id').primary().defaultTo(knex.raw('(UUID())'));
     table.uuid('match_id').notNullable();
@@ -18,8 +16,8 @@ export async function up(knex: Knex): Promise<void> {
     // Foreign key constraint
     table.foreign('match_id').references('id').inTable('matches').onDelete('CASCADE');
   });
-}
+};
 
-export async function down(knex: Knex): Promise<void> {
+exports.down = async function(knex) {
   return knex.schema.dropTable('match_participants');
-}
+};

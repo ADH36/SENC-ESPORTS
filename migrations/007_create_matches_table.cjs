@@ -1,6 +1,4 @@
-import type { Knex } from 'knex';
-
-export async function up(knex: Knex): Promise<void> {
+exports.up = async function(knex) {
   return knex.schema.createTable('matches', (table) => {
     table.uuid('id').primary().defaultTo(knex.raw('(UUID())'));
     table.uuid('tournament_id').notNullable();
@@ -24,8 +22,8 @@ export async function up(knex: Knex): Promise<void> {
     table.foreign('tournament_id').references('id').inTable('tournaments').onDelete('CASCADE');
     table.foreign('bracket_id').references('id').inTable('brackets').onDelete('CASCADE');
   });
-}
+};
 
-export async function down(knex: Knex): Promise<void> {
+exports.down = async function(knex) {
   return knex.schema.dropTable('matches');
-}
+};
