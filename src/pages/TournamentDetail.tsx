@@ -449,17 +449,17 @@ export default function TournamentDetail() {
                         <span>Entry Fee</span>
                       </div>
                       <span className="text-white">
-                        {currentTournament.entryFee ? `$${currentTournament.entryFee}` : 'Free'}
+                        {currentTournament.prizePool ? `$${currentTournament.prizePool}` : 'Free'}
                       </span>
                     </div>
                   </div>
                 </div>
                 
-                {currentTournament.description && (
+                {currentTournament.rules && (
                   <div>
-                    <h3 className="text-lg font-semibold text-white mb-3">Description</h3>
+                    <h3 className="text-lg font-semibold text-white mb-3">Rules</h3>
                     <p className="text-gray-300 leading-relaxed">
-                      {currentTournament.description}
+                      {currentTournament.rules}
                     </p>
                   </div>
                 )}
@@ -550,7 +550,7 @@ export default function TournamentDetail() {
                   </div>
                   <div>
                     <p className="text-white font-medium">
-                      {currentTournament.managerName || 'Tournament Manager'}
+                      {currentTournament.manager ? `${currentTournament.manager.firstName} ${currentTournament.manager.lastName}` : 'Tournament Manager'}
                     </p>
                     <p className="text-sm text-gray-400">Organizer</p>
                   </div>

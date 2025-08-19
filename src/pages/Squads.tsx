@@ -298,9 +298,9 @@ export default function Squads() {
                           <span>{squad.game}</span>
                         </div>
                       </div>
-                      {squad.isPrivate && (
+                      {!squad.isRecruiting && (
                         <span className="px-2 py-1 bg-yellow-900 text-yellow-300 rounded-full text-xs font-medium">
-                          Private
+                          Not Recruiting
                         </span>
                       )}
                     </div>
@@ -320,7 +320,7 @@ export default function Squads() {
                           <span>Members</span>
                         </div>
                         <span className="text-white">
-                          {squad.memberCount || 0}/{squad.maxMembers || 5}
+                          {squad.memberCount || 0}/5
                         </span>
                       </div>
                       
@@ -330,7 +330,7 @@ export default function Squads() {
                           <span>Captain</span>
                         </div>
                         <span className="text-white">
-                          {squad.captainName || 'Unknown'}
+                          {squad.captain ? `${squad.captain.firstName} ${squad.captain.lastName}` : 'Unknown'}
                         </span>
                       </div>
                     </div>
@@ -343,14 +343,13 @@ export default function Squads() {
                         </Button>
                       </Link>
                       
-                      {isAuthenticated && user?.role === 'player' && !squad.isMember && (
+                      {isAuthenticated && user?.role === 'player' && squad.isRecruiting && (
                         <Button
                           onClick={() => handleJoinSquad(squad.id)}
                           className="flex-1"
-                          disabled={squad.isPrivate}
                         >
                           <UserPlus className="w-4 h-4 mr-2" />
-                          {squad.isPrivate ? 'Private' : 'Join'}
+                          Join
                         </Button>
                       )}
                     </div>

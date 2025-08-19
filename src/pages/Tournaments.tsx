@@ -51,10 +51,7 @@ export default function Tournaments() {
     }
     
     try {
-      await registerForTournament(tournamentId, {
-        registrationType: 'individual',
-        squadId: undefined
-      });
+      await registerForTournament(tournamentId, undefined);
     } catch (error) {
       console.error('Registration failed:', error);
     }
