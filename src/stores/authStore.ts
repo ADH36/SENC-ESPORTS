@@ -21,6 +21,7 @@ interface AuthState {
   error: string | null;
   
   // Actions
+  initializeAuth: () => void;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: {
     email: string;
@@ -50,6 +51,13 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+
+      initializeAuth: () => {
+        const { accessToken } = get();
+        if (accessToken) {
+          axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+        }
+      },
 
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
