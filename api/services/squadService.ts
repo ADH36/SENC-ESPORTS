@@ -298,7 +298,7 @@ class SquadService {
 
     return {
       squads: squadsWithCaptain,
-      total: totalResult?.count || 0
+      total: Number(totalResult?.count) || 0
     };
   }
 

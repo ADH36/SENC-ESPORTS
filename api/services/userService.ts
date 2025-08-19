@@ -153,7 +153,7 @@ class UserService {
 
     return {
       users,
-      total: totalResult?.count || 0
+      total: Number(totalResult?.count) || 0
     };
   }
 

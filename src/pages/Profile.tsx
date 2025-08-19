@@ -393,7 +393,7 @@ export default function Profile() {
                       <div>
                         <p className="text-sm text-gray-400">Member Since</p>
                         <p className="text-white">
-                          {new Date(user.createdAt).toLocaleDateString('en-US', {
+                          {new Date().toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric'
@@ -422,12 +422,7 @@ export default function Profile() {
                   </div>
                 </div>
                 
-                {user.bio && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-white mb-3">About</h3>
-                    <p className="text-gray-300 leading-relaxed">{user.bio}</p>
-                  </div>
-                )}
+
               </CardContent>
             </Card>
 

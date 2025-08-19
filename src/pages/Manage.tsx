@@ -705,7 +705,7 @@ export default function Manage() {
         message={`Are you sure you want to delete "${selectedTournament?.name}"? This action cannot be undone and all registrations will be lost.`}
         confirmText="Delete Tournament"
         variant="danger"
-        isLoading={isDeleting}
+        loading={isDeleting}
       />
     </div>
   );

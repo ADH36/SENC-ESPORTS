@@ -220,7 +220,7 @@ class TournamentService {
 
     return {
       tournaments: tournamentsWithManager,
-      total: totalResult?.count || 0
+      total: Number(totalResult?.count) || 0
     };
   }
 

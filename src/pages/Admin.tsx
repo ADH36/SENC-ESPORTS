@@ -759,7 +759,7 @@ export default function Admin() {
         message={`Are you sure you want to ${selectedUser?.isActive ? 'deactivate' : 'activate'} ${selectedUser?.username}?`}
         confirmText={selectedUser?.isActive ? 'Deactivate' : 'Activate'}
         variant={selectedUser?.isActive ? 'danger' : 'primary'}
-        isLoading={isUpdating}
+        loading={isUpdating}
       />
 
       {/* Delete User Confirmation */}
@@ -774,7 +774,7 @@ export default function Admin() {
         message={`Are you sure you want to delete ${selectedUser?.username}? This action cannot be undone.`}
         confirmText="Delete User"
         variant="danger"
-        isLoading={isUpdating}
+        loading={isUpdating}
       />
     </div>
   );
