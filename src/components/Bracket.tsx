@@ -530,7 +530,7 @@ export default function Bracket({
       {/* Bracket Content */}
       <Card>
         <CardContent className="p-6">
-          {format === 'single-elimination' && (
+          {format === 'single_elimination' && (
             <SingleEliminationBracket
               matches={matches}
               isManager={isManager}
@@ -539,7 +539,7 @@ export default function Bracket({
             />
           )}
           
-          {format === 'double-elimination' && (
+          {format === 'double_elimination' && (
             <div className="text-center py-12">
               <Trophy className="w-16 h-16 text-gray-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-white mb-2">Double Elimination</h3>
@@ -547,7 +547,7 @@ export default function Bracket({
             </div>
           )}
           
-          {format === 'round-robin' && (
+          {format === 'round_robin' && (
             <RoundRobinBracket
               matches={matches}
               participants={participants}

@@ -21,7 +21,8 @@ import {
   Trash2,
   Crown,
   Target,
-  CheckCircle
+  CheckCircle,
+  Award
 } from 'lucide-react';
 
 interface RegistrationModalProps {
@@ -227,7 +228,7 @@ export default function TournamentDetail() {
   const canRegister = () => {
     return isAuthenticated && 
            user?.role === 'player' && 
-           currentTournament.status === 'upcoming' &&
+           currentTournament.status === 'open' &&
            new Date(currentTournament.registrationDeadline) > new Date();
   };
 
@@ -254,7 +255,7 @@ export default function TournamentDetail() {
 
   const handleRegister = async (data: { registrationType: 'individual' | 'squad'; squadId?: string }) => {
     try {
-      await registerForTournament(currentTournament.id, data);
+      await registerForTournament(currentTournament.id, data.squadId);
       // TODO: Refresh registrations
     } catch (error) {
       console.error('Registration failed:', error);
@@ -562,7 +563,7 @@ export default function TournamentDetail() {
 
         {activeTab === 'bracket' && (
           <div className="space-y-6">
-            {currentTournament.status === 'upcoming' ? (
+            {currentTournament.status === 'draft' ? (
               <Card>
                 <CardContent>
                   <div className="text-center py-12">
@@ -581,6 +582,7 @@ export default function TournamentDetail() {
                 </CardHeader>
                 <CardContent>
                   <Bracket
+                    tournamentId={currentTournament.id}
                     participants={participants}
                     matches={matches}
                     onUpdateMatch={canManage() ? handleUpdateMatch : undefined}
