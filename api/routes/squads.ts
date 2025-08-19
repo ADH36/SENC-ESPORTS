@@ -92,3 +92,98 @@ router.put('/:id', authenticateToken, requirePlayer, async (req: AuthRequest, re
       success: true,
       message: 'Squad updated successfully',
       data: { squad }
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Squad update failed'
+    });
+  }
+});
+
+// Delete squad
+router.delete('/:id', authenticateToken, requirePlayer, async (req: AuthRequest, res: Response) => {
+  try {
+    await squadService.deleteSquad(req.params.id, req.user!.id);
+
+    res.json({
+      success: true,
+      message: 'Squad deleted successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Squad deletion failed'
+    });
+  }
+});
+
+// Get squad members
+router.get('/:id/members', async (req: Request, res: Response) => {
+  try {
+    const members = await squadService.getSquadMembers(req.params.id);
+    
+    res.json({
+      success: true,
+      data: { members }
+    });
+  } catch (error) {
+    res.status(404).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Squad not found'
+    });
+  }
+});
+
+// Join squad
+router.post('/:id/join', authenticateToken, requirePlayer, async (req: AuthRequest, res: Response) => {
+  try {
+    await squadService.addMember(req.params.id, req.user!.id);
+
+    res.json({
+      success: true,
+      message: 'Successfully joined squad'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to join squad'
+    });
+  }
+});
+
+// Leave squad
+router.post('/:id/leave', authenticateToken, requirePlayer, async (req: AuthRequest, res: Response) => {
+  try {
+    await squadService.removeMember(req.params.id, req.user!.id, req.user!.id);
+
+    res.json({
+      success: true,
+      message: 'Successfully left squad'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to leave squad'
+    });
+  }
+});
+
+// Remove member (captain only)
+router.delete('/:id/members/:userId', authenticateToken, requirePlayer, async (req: AuthRequest, res: Response) => {
+  try {
+    await squadService.removeMember(req.params.id, req.params.userId, req.user!.id);
+
+    res.json({
+      success: true,
+      message: 'Member removed successfully'
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to remove member'
+    });
+  }
+});
+
+export default router;

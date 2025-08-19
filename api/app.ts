@@ -8,6 +8,9 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.js';
+import userRoutes from './routes/users.js';
+import squadRoutes from './routes/squads.js';
+import tournamentRoutes from './routes/tournaments.js';
 
 // for esm mode
 const __filename = fileURLToPath(import.meta.url);
@@ -19,14 +22,26 @@ dotenv.config();
 
 const app: express.Application = express();
 
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  credentials: true
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
 
 /**
  * API Routes
  */
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/squads', squadRoutes);
+app.use('/api/tournaments', tournamentRoutes);
 
 /**
  * health
@@ -34,7 +49,23 @@ app.use('/api/auth', authRoutes);
 app.use('/api/health', (req: Request, res: Response, next: NextFunction): void => {
   res.status(200).json({
     success: true,
-    message: 'ok'
+    message: 'ok',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// API info endpoint
+app.get('/api', (req, res) => {
+  res.json({
+    name: 'SENC Esports API',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      users: '/api/users',
+      squads: '/api/squads',
+      tournaments: '/api/tournaments'
+    }
   });
 });
 
@@ -42,9 +73,30 @@ app.use('/api/health', (req: Request, res: Response, next: NextFunction): void =
  * error handler middleware
  */
 app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error('Error:', error.stack);
+  
+  // Handle specific error types
+  if (error.name === 'ValidationError') {
+    return res.status(400).json({
+      success: false,
+      error: 'Validation failed',
+      details: error.message
+    });
+  }
+  
+  if (error.name === 'UnauthorizedError') {
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized access'
+    });
+  }
+  
+  // Default error response
   res.status(500).json({
     success: false,
-    error: 'Server internal error'
+    error: process.env.NODE_ENV === 'production' 
+      ? 'Internal server error' 
+      : error.message
   });
 });
 
@@ -54,7 +106,8 @@ app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
 app.use((req: Request, res: Response) => {
   res.status(404).json({
     success: false,
-    error: 'API not found'
+    error: 'Route not found',
+    path: req.originalUrl
   });
 });
 
