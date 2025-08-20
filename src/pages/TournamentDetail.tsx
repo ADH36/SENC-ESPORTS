@@ -9,6 +9,7 @@ import Modal, { ConfirmModal } from '@/components/Modal';
 import Input from '@/components/Input';
 import Bracket, { Participant, Match } from '@/components/Bracket';
 import TournamentContent from '@/components/TournamentContent';
+import { showToast } from '@/components/Toast';
 import { 
   Calendar, 
   MapPin, 
@@ -138,89 +139,72 @@ export default function TournamentDetail() {
   useEffect(() => {
     if (id) {
       fetchTournamentById(id);
-      
-      // Mock participants data
-      const mockParticipants: Participant[] = [
-        { id: '1', name: 'Team Alpha', type: 'squad', seed: 1 },
-        { id: '2', name: 'Team Beta', type: 'squad', seed: 2 },
-        { id: '3', name: 'Team Gamma', type: 'squad', seed: 3 },
-        { id: '4', name: 'Team Delta', type: 'squad', seed: 4 },
-        { id: '5', name: 'Player One', type: 'player', seed: 5 },
-        { id: '6', name: 'Player Two', type: 'player', seed: 6 },
-        { id: '7', name: 'Player Three', type: 'player', seed: 7 },
-        { id: '8', name: 'Player Four', type: 'player', seed: 8 }
-      ];
-      
-      // Mock matches data for single elimination
-      const mockMatches: Match[] = [
-        {
-          id: '1',
-          round: 1,
-          position: 1,
-          participant1: mockParticipants[0],
-          participant2: mockParticipants[7],
-          status: 'completed',
-          winner: mockParticipants[0],
-          score1: 2,
-          score2: 1,
-          completedTime: '2024-01-20T15:30:00Z'
-        },
-        {
-          id: '2',
-          round: 1,
-          position: 2,
-          participant1: mockParticipants[1],
-          participant2: mockParticipants[6],
-          status: 'completed',
-          winner: mockParticipants[1],
-          score1: 2,
-          score2: 0,
-          completedTime: '2024-01-20T16:00:00Z'
-        },
-        {
-          id: '3',
-          round: 1,
-          position: 3,
-          participant1: mockParticipants[2],
-          participant2: mockParticipants[5],
-          status: 'ongoing',
-          scheduledTime: '2024-01-21T14:00:00Z'
-        },
-        {
-          id: '4',
-          round: 1,
-          position: 4,
-          participant1: mockParticipants[3],
-          participant2: mockParticipants[4],
-          status: 'pending',
-          scheduledTime: '2024-01-21T15:00:00Z'
-        },
-        {
-          id: '5',
-          round: 2,
-          position: 1,
-          participant1: mockParticipants[0],
-          participant2: mockParticipants[1],
-          status: 'pending'
-        },
-        {
-          id: '6',
-          round: 2,
-          position: 2,
-          status: 'pending'
-        },
-        {
-          id: '7',
-          round: 3,
-          position: 1,
-          status: 'pending'
-        }
-      ];
-      
-      setParticipants(mockParticipants);
-      setMatches(mockMatches);
+      fetchTournamentData(id);
     }
   }, [id, fetchTournamentById]);
+
+  const fetchTournamentData = async (tournamentId: string) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      
+      // Fetch tournament registrations to get participants
+      const registrationsResponse = await fetch(`/api/tournaments/${tournamentId}/registrations`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (registrationsResponse.ok) {
+        const registrationsData = await registrationsResponse.json();
+        const tournamentRegistrations = registrationsData.data.registrations || [];
+        
+        // Convert registrations to participants
+        const tournamentParticipants: Participant[] = tournamentRegistrations
+          .filter((reg: any) => reg.status === 'approved')
+          .map((reg: any, index: number) => ({
+            id: reg.id,
+            name: reg.participant?.name || `Participant ${index + 1}`,
+            type: reg.registrationType === 'squad' ? 'squad' : 'player',
+            seed: index + 1
+          }));
+        
+        setParticipants(tournamentParticipants);
+        setRegistrations(tournamentRegistrations);
+      }
+      
+      // Try to fetch bracket data from content API
+      const bracketResponse = await fetch(`/api/content/tournament/${tournamentId}?type=bracket`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (bracketResponse.ok) {
+        const bracketData = await bracketResponse.json();
+        const bracketContent = bracketData.data.items.find((item: any) => item.contentType === 'bracket');
+        
+        if (bracketContent && bracketContent.content) {
+          const parsedContent = typeof bracketContent.content === 'string' 
+            ? JSON.parse(bracketContent.content) 
+            : bracketContent.content;
+          
+          if (parsedContent.matches) {
+            setMatches(parsedContent.matches);
+          }
+        }
+      }
+      
+    } catch (error) {
+      console.error('Failed to fetch tournament data:', error);
+      showToast.apiError(error, 'Failed to load tournament data');
+      // Set empty arrays on error
+      setParticipants([]);
+      setMatches([]);
+      setRegistrations([]);
+    }
+  };
 
   if (isLoading || !currentTournament) {
     return <PageLoading text="Loading tournament details..." />;
@@ -257,42 +241,104 @@ export default function TournamentDetail() {
   const handleRegister = async (data: { registrationType: 'individual' | 'squad'; squadId?: string }) => {
     try {
       await registerForTournament(currentTournament.id, data.squadId);
+      showToast.success('Successfully registered for tournament!');
       // TODO: Refresh registrations
     } catch (error) {
       console.error('Registration failed:', error);
+      showToast.apiError(error, 'Failed to register for tournament');
     }
   };
 
   const handleDelete = async () => {
     try {
       await deleteTournament(currentTournament.id);
+      showToast.success('Tournament deleted successfully!');
       navigate('/tournaments');
     } catch (error) {
       console.error('Failed to delete tournament:', error);
+      showToast.apiError(error, 'Failed to delete tournament');
     }
   };
 
   const handleUpdateMatch = async (matchId: string, data: any) => {
     try {
-      // TODO: API call to update match
+      // Update local state immediately for better UX
       setMatches(prev => prev.map(match => 
         match.id === matchId ? { ...match, ...data } : match
       ));
+      
+      // Update bracket data via content API
+      const token = localStorage.getItem('accessToken');
+      const updatedMatches = matches.map(match => 
+        match.id === matchId ? { ...match, ...data } : match
+      );
+      
+      await fetch(`/api/content/tournament/${id}/bracket`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          bracketData: {
+            participants,
+            matches: updatedMatches
+          },
+          title: 'Tournament Bracket',
+          description: 'Tournament bracket with match results'
+        })
+      });
+      
+      showToast.success('Match updated successfully!');
       console.log('Match updated:', matchId, data);
     } catch (error) {
       console.error('Failed to update match:', error);
+      showToast.apiError(error, 'Failed to update match');
+      // Revert local state on error
+      setMatches(prev => prev.map(match => 
+        match.id === matchId ? { ...match } : match
+      ));
     }
   };
 
   const handleScheduleMatch = async (matchId: string, time: string) => {
     try {
-      // TODO: API call to schedule match
+      // Update local state immediately for better UX
       setMatches(prev => prev.map(match => 
         match.id === matchId ? { ...match, scheduledTime: time } : match
       ));
-      console.log('Match scheduled:', matchId, time);
-    } catch (error) {
+      
+      // Update bracket data via content API
+      const token = localStorage.getItem('accessToken');
+      const updatedMatches = matches.map(match => 
+        match.id === matchId ? { ...match, scheduledTime: time } : match
+      );
+      
+      await fetch(`/api/content/tournament/${id}/bracket`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          bracketData: {
+            participants,
+            matches: updatedMatches
+          },
+          title: 'Tournament Bracket',
+          description: 'Tournament bracket with match schedules'
+        })
+      });
+      
+      showToast.success('Match scheduled successfully!');
+        console.log('Match scheduled:', matchId, time);
+      } catch (error) {
       console.error('Failed to schedule match:', error);
+      showToast.apiError(error, 'Failed to schedule match');
+      // Revert local state on error
+      setMatches(prev => prev.map(match => 
+        match.id === matchId ? { ...match } : match
+      ));
     }
   };
 

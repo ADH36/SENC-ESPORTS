@@ -5,6 +5,7 @@ import Card, { CardContent, CardHeader, CardTitle } from '@/components/Card';
 import Input from '@/components/Input';
 import Loading from '@/components/Loading';
 import Modal from '@/components/Modal';
+import { showToast } from '@/components/Toast';
 import { 
   FileText, 
   Youtube, 
@@ -368,39 +369,9 @@ export default function ContentManagement() {
       setContentItems(filtered);
     } catch (error) {
       console.error('Failed to fetch content items:', error);
-      // Fallback to mock data
-      const mockContentItems: ContentItem[] = [
-        {
-          id: '1',
-          tournamentId: '1',
-          tournamentName: 'Spring Championship 2024',
-          type: 'bracket',
-          title: 'Quarter Finals Bracket',
-          content: 'Bracket content here...',
-          isVisible: true,
-          createdAt: '2024-01-15T10:00:00Z',
-          updatedAt: '2024-01-16T14:30:00Z',
-          createdBy: 'admin',
-          updatedBy: 'manager1'
-        },
-        {
-          id: '2',
-          tournamentId: '1',
-          tournamentName: 'Spring Championship 2024',
-          type: 'youtube_embed',
-          title: 'Championship Highlights',
-          content: 'Amazing highlights from the championship!',
-          youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          youtubeVideoId: 'dQw4w9WgXcQ',
-          embedType: 'highlight',
-          isVisible: true,
-          createdAt: '2024-01-17T09:00:00Z',
-          updatedAt: '2024-01-17T09:00:00Z',
-          createdBy: 'manager1',
-          updatedBy: 'manager1'
-        }
-      ];
-      setContentItems(mockContentItems);
+      showToast.apiError(error, 'Failed to load content');
+      // Set empty array on error - no fallback to mock data
+      setContentItems([]);
     }
   };
 
@@ -427,24 +398,9 @@ export default function ContentManagement() {
       await fetchContentItems();
     } catch (error) {
       console.error('Failed to fetch content data:', error);
-      // Fallback to mock data for tournaments
-      const mockTournaments = [
-        {
-          id: '1',
-          name: 'Spring Championship 2024',
-          game: 'League of Legends',
-          status: 'active' as const,
-          startDate: '2024-03-01'
-        },
-        {
-          id: '2',
-          name: 'Summer Cup 2024',
-          game: 'Valorant',
-          status: 'upcoming' as const,
-          startDate: '2024-06-01'
-        }
-      ];
-      setTournaments(mockTournaments);
+      showToast.apiError(error, 'Failed to load tournaments');
+      // Set empty array on error - no fallback to mock data
+      setTournaments([]);
     } finally {
       setIsLoading(false);
     }
@@ -514,6 +470,7 @@ export default function ContentManagement() {
       
       // Refresh content after successful save
       await fetchContentItems();
+      showToast.success(selectedContent ? 'Content updated successfully!' : 'Content created successfully!');
       
       setShowBracketModal(false);
       setShowYouTubeModal(false);
@@ -521,6 +478,7 @@ export default function ContentManagement() {
       setSelectedTournamentObj(null);
     } catch (error) {
       console.error('Failed to save content:', error);
+      showToast.apiError(error, 'Failed to save content');
       // For demo purposes, still close modal on error
       setShowBracketModal(false);
       setShowYouTubeModal(false);
@@ -548,8 +506,10 @@ export default function ContentManagement() {
       
       // Refresh content after successful delete
       await fetchContentItems();
+      showToast.success('Content deleted successfully!');
     } catch (error) {
       console.error('Failed to delete content:', error);
+      showToast.apiError(error, 'Failed to delete content');
       // For demo purposes, still remove from state on error
       setContentItems(prev => prev.filter(item => item.id !== contentId));
     }

@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
+import { Toaster } from 'sonner';
 import { useAuthStore } from './stores/authStore';
 import Layout from './components/Layout';
 import Home from './pages/Home';
@@ -29,6 +30,13 @@ function App() {
 
   return (
     <Router>
+      <Toaster 
+        position="top-right" 
+        theme="dark" 
+        richColors 
+        closeButton 
+        duration={4000}
+      />
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />

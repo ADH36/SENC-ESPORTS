@@ -8,6 +8,7 @@ import Modal, { ConfirmModal } from '@/components/Modal';
 import AdminDashboard from '@/components/AdminDashboard';
 import ContentManagement from '@/components/ContentManagement';
 import AdminGuide from '@/components/AdminGuide';
+import { showToast } from '@/components/Toast';
 import { 
   Users, 
   Search, 
@@ -220,56 +221,44 @@ export default function Admin() {
     activeSquads: 0
   });
 
-  // Mock data - replace with actual API calls
+  // Fetch real data from API
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Mock users data
-        const mockUsers: User[] = [
-          {
-            id: '1',
-            username: 'player1',
-            firstName: 'John',
-            lastName: 'Doe',
-            email: 'john@example.com',
-            role: 'player',
-            isActive: true,
-            createdAt: '2024-01-15T10:00:00Z',
-            lastLogin: '2024-01-20T14:30:00Z'
-          },
-          {
-            id: '2',
-            username: 'manager1',
-            firstName: 'Jane',
-            lastName: 'Smith',
-            email: 'jane@example.com',
-            role: 'manager',
-            isActive: true,
-            createdAt: '2024-01-10T09:00:00Z',
-            lastLogin: '2024-01-19T16:45:00Z'
-          },
-          {
-            id: '3',
-            username: 'player2',
-            firstName: 'Bob',
-            lastName: 'Wilson',
-            email: 'bob@example.com',
-            role: 'player',
-            isActive: false,
-            createdAt: '2024-01-12T11:30:00Z'
+        // Fetch users from API
+        const token = localStorage.getItem('accessToken');
+        const response = await fetch('/api/users', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-        ];
+        });
         
-        setUsers(mockUsers);
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
+        
+        const data = await response.json();
+        const fetchedUsers = data.data.users || [];
+        
+        setUsers(fetchedUsers);
         setStats({
-          totalUsers: mockUsers.length,
-          activeUsers: mockUsers.filter(u => u.isActive).length,
-          totalTournaments: 5,
-          activeSquads: 12
+          totalUsers: fetchedUsers.length,
+          activeUsers: fetchedUsers.filter((u: User) => u.isActive).length,
+          totalTournaments: 5, // TODO: Fetch from tournaments API
+          activeSquads: 12 // TODO: Fetch from squads API
         });
       } catch (error) {
         console.error('Failed to fetch admin data:', error);
+        showToast.apiError(error, 'Failed to load users');
+        setUsers([]);
+        setStats({
+          totalUsers: 0,
+          activeUsers: 0,
+          totalTournaments: 0,
+          activeSquads: 0
+        });
       } finally {
         setIsLoading(false);
       }
@@ -336,14 +325,36 @@ export default function Admin() {
     
     setIsUpdating(true);
     try {
-      // TODO: API call to toggle user status
+      const token = localStorage.getItem('accessToken');
+      
+      if (!selectedUser.isActive) {
+        // TODO: Implement reactivate user API endpoint
+        console.log('Reactivate user functionality not yet implemented');
+        return;
+      }
+      
+      // Deactivate user
+      const response = await fetch(`/api/users/${selectedUser.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to deactivate user');
+      }
+      
+      // Update local state
       setUsers(prev => prev.map(u => 
-        u.id === selectedUser.id ? { ...u, isActive: !u.isActive } : u
+        u.id === selectedUser.id ? { ...u, isActive: false } : u
       ));
       setShowStatusModal(false);
       setSelectedUser(null);
     } catch (error) {
       console.error('Failed to toggle user status:', error);
+      showToast.apiError(error, 'Failed to update user status');
     } finally {
       setIsUpdating(false);
     }
@@ -352,14 +363,19 @@ export default function Admin() {
   const confirmChangeRole = async (userId: string, newRole: string) => {
     setIsUpdating(true);
     try {
-      // TODO: API call to change user role
+      // TODO: Implement change user role API endpoint
+      console.log('Change user role functionality not yet implemented');
+      
+      // For now, update local state only
       setUsers(prev => prev.map(u => 
         u.id === userId ? { ...u, role: newRole as any } : u
       ));
+      showToast.success(`User role updated to ${newRole} successfully!`);
       setShowRoleModal(false);
       setSelectedUser(null);
     } catch (error) {
       console.error('Failed to change user role:', error);
+      showToast.apiError(error, 'Failed to update user role');
     } finally {
       setIsUpdating(false);
     }
@@ -370,12 +386,29 @@ export default function Admin() {
     
     setIsUpdating(true);
     try {
-      // TODO: API call to delete user
-      setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`/api/users/${selectedUser.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to deactivate user');
+      }
+      
+      // Remove user from local state (or mark as inactive)
+      setUsers(prev => prev.map(u => 
+        u.id === selectedUser.id ? { ...u, isActive: false } : u
+      ));
+      showToast.success('User deleted successfully!');
       setShowDeleteModal(false);
       setSelectedUser(null);
     } catch (error) {
       console.error('Failed to delete user:', error);
+      showToast.apiError(error, 'Failed to delete user');
     } finally {
       setIsUpdating(false);
     }

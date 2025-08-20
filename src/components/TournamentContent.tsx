@@ -75,87 +75,8 @@ function BracketContent({ content, title, tournamentId }: { content: string; tit
         console.log('No structured bracket data available, using text fallback');
       }
 
-      // If no structured data, try to parse from content or create mock data
-      if (content && content.includes('Match')) {
-        // Create mock participants and matches from text content
-        const mockParticipants: Participant[] = [
-          { id: '1', name: 'Team Alpha', type: 'squad', seed: 1 },
-          { id: '2', name: 'Team Beta', type: 'squad', seed: 2 },
-          { id: '3', name: 'Team Gamma', type: 'squad', seed: 3 },
-          { id: '4', name: 'Team Delta', type: 'squad', seed: 4 },
-          { id: '5', name: 'Team Echo', type: 'squad', seed: 5 },
-          { id: '6', name: 'Team Foxtrot', type: 'squad', seed: 6 },
-          { id: '7', name: 'Team Golf', type: 'squad', seed: 7 },
-          { id: '8', name: 'Team Hotel', type: 'squad', seed: 8 }
-        ];
-
-        const mockMatches: Match[] = [
-          {
-            id: '1',
-            round: 1,
-            position: 1,
-            participant1: mockParticipants[0],
-            participant2: mockParticipants[1],
-            winner: mockParticipants[0],
-            score1: 2,
-            score2: 1,
-            status: 'completed'
-          },
-          {
-            id: '2',
-            round: 1,
-            position: 2,
-            participant1: mockParticipants[2],
-            participant2: mockParticipants[3],
-            winner: mockParticipants[2],
-            score1: 2,
-            score2: 0,
-            status: 'completed'
-          },
-          {
-            id: '3',
-            round: 1,
-            position: 3,
-            participant1: mockParticipants[4],
-            participant2: mockParticipants[5],
-            status: 'pending',
-            scheduledTime: '2024-03-16T14:00:00Z'
-          },
-          {
-            id: '4',
-            round: 1,
-            position: 4,
-            participant1: mockParticipants[6],
-            participant2: mockParticipants[7],
-            status: 'pending',
-            scheduledTime: '2024-03-16T16:00:00Z'
-          },
-          {
-            id: '5',
-            round: 2,
-            position: 1,
-            participant1: mockParticipants[0],
-            participant2: mockParticipants[2],
-            status: 'pending'
-          },
-          {
-            id: '6',
-            round: 2,
-            position: 2,
-            status: 'pending'
-          },
-          {
-            id: '7',
-            round: 3,
-            position: 1,
-            status: 'pending'
-          }
-        ];
-
-        setBracketData({ participants: mockParticipants, matches: mockMatches });
-      } else {
-        setShowTextFallback(true);
-      }
+      // If no structured data available, show text fallback
+      setShowTextFallback(true);
     };
 
     fetchBracketData();
