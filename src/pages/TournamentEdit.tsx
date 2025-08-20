@@ -42,7 +42,7 @@ const statusOptions = [
 export default function TournamentEdit() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, token, isAuthenticated } = useAuthStore();
+  const { user, accessToken, isAuthenticated } = useAuthStore();
   
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,13 +64,13 @@ export default function TournamentEdit() {
   // Check authentication and permissions
   useEffect(() => {
     if (!isAuthenticated) {
-      showToast('Authentication required', 'error');
+      showToast.error('Authentication required');
       navigate('/login');
       return;
     }
 
     if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
-      showToast('Insufficient permissions. Only admins and managers can edit tournaments.', 'error');
+      showToast.error('Insufficient permissions. Only admins and managers can edit tournaments.');
       navigate('/manage');
       return;
     }
@@ -83,9 +83,9 @@ export default function TournamentEdit() {
       
       setLoading(true);
       try {
-        const token = localStorage.getItem('token');
+        const token = accessToken;
         if (!token) {
-          showToast('Authentication required', 'error');
+          showToast.error('Authentication required');
           navigate('/login');
           return;
         }
@@ -121,7 +121,7 @@ export default function TournamentEdit() {
         });
       } catch (error) {
         console.error('Error fetching tournament:', error);
-        showToast('Failed to load tournament data', 'error');
+        showToast.error('Failed to load tournament data');
       } finally {
         setLoading(false);
       }
@@ -139,37 +139,37 @@ export default function TournamentEdit() {
 
   const validateForm = () => {
     if (!formData.name.trim()) {
-      showToast('Tournament name is required', 'error');
+      showToast.error('Tournament name is required');
       return false;
     }
     
     if (!formData.game.trim()) {
-      showToast('Game is required', 'error');
+      showToast.error('Game is required');
       return false;
     }
     
     if (formData.maxParticipants < 2) {
-      showToast('Maximum participants must be at least 2', 'error');
+      showToast.error('Maximum participants must be at least 2');
       return false;
     }
     
     if (!formData.registrationDeadline) {
-      showToast('Registration deadline is required', 'error');
+      showToast.error('Registration deadline is required');
       return false;
     }
     
     if (!formData.startDate) {
-      showToast('Start date is required', 'error');
+      showToast.error('Start date is required');
       return false;
     }
     
     if (new Date(formData.registrationDeadline) >= new Date(formData.startDate)) {
-      showToast('Registration deadline must be before start date', 'error');
+      showToast.error('Registration deadline must be before start date');
       return false;
     }
     
     if (formData.endDate && new Date(formData.endDate) <= new Date(formData.startDate)) {
-      showToast('End date must be after start date', 'error');
+      showToast.error('End date must be after start date');
       return false;
     }
     
@@ -180,7 +180,7 @@ export default function TournamentEdit() {
     e.preventDefault();
     
     if (!id) {
-      showToast('Tournament ID is required', 'error');
+      showToast.error('Tournament ID is required');
       return;
     }
 
@@ -190,9 +190,9 @@ export default function TournamentEdit() {
 
     setSaving(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = accessToken;
       if (!token) {
-        showToast('Authentication required', 'error');
+        showToast.error('Authentication required');
         navigate('/login');
         return;
       }
@@ -226,7 +226,7 @@ export default function TournamentEdit() {
       }
 
       const result = await response.json();
-      showToast('Tournament updated successfully! 🎉', 'success');
+      showToast.success('Tournament updated successfully! 🎉');
       
       // Small delay to show success message before navigation
       setTimeout(() => {
@@ -235,7 +235,7 @@ export default function TournamentEdit() {
     } catch (error) {
       console.error('Error updating tournament:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update tournament';
-      showToast(`Update failed: ${errorMessage}`, 'error');
+      showToast.error(`Update failed: ${errorMessage}`);
     } finally {
       setSaving(false);
     }
