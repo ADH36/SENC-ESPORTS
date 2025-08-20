@@ -102,7 +102,7 @@ export default function TournamentEdit() {
         }
 
         const data = await response.json();
-        const tournament = data.data || data;
+        const tournament = data.data?.tournament || data.tournament || data;
         
         setTournament(tournament);
         
