@@ -238,19 +238,33 @@ export default function Admin() {
         
         // Fetch users from API using axios (configured in authStore)
         console.log('Making request to /api/users...');
-        const response = await axios.get('/api/users');
-        console.log('API Response:', response);
+        const usersResponse = await axios.get('/api/users');
+        console.log('Users API Response:', usersResponse);
         
-        const data = response.data;
-        const fetchedUsers = data.users || [];
+        const usersData = usersResponse.data;
+        const fetchedUsers = usersData.data?.users || [];
         console.log('Fetched users:', fetchedUsers);
+        
+        // Fetch tournaments data
+        console.log('Making request to /api/tournaments...');
+        const tournamentsResponse = await axios.get('/api/tournaments');
+        console.log('Tournaments API Response:', tournamentsResponse);
+        const tournamentsData = tournamentsResponse.data;
+        const totalTournaments = tournamentsData.data?.pagination?.total || 0;
+        
+        // Fetch squads data
+        console.log('Making request to /api/squads...');
+        const squadsResponse = await axios.get('/api/squads');
+        console.log('Squads API Response:', squadsResponse);
+        const squadsData = squadsResponse.data;
+        const activeSquads = squadsData.data?.pagination?.total || 0;
           
         setUsers(fetchedUsers);
         setStats({
           totalUsers: fetchedUsers.length,
           activeUsers: fetchedUsers.filter((u: User) => u.isActive).length,
-          totalTournaments: 5, // TODO: Fetch from tournaments API
-          activeSquads: 12 // TODO: Fetch from squads API
+          totalTournaments,
+          activeSquads
         });
       } catch (error: any) {
         console.error('Failed to fetch admin data - Full error:', error);
@@ -267,17 +281,27 @@ export default function Admin() {
             await refreshAccessToken();
             console.log('Token refreshed successfully, retrying request...');
             
-            // Retry the request after token refresh
-            const retryResponse = await axios.get('/api/users');
-            const retryData = retryResponse.data;
-            const retryFetchedUsers = retryData.users || [];
+            // Retry the requests after token refresh
+            const retryUsersResponse = await axios.get('/api/users');
+            const retryUsersData = retryUsersResponse.data;
+            const retryFetchedUsers = retryUsersData.data?.users || [];
+            
+            // Retry tournaments data
+            const retryTournamentsResponse = await axios.get('/api/tournaments');
+            const retryTournamentsData = retryTournamentsResponse.data;
+            const retryTotalTournaments = retryTournamentsData.data?.pagination?.total || 0;
+            
+            // Retry squads data
+            const retrySquadsResponse = await axios.get('/api/squads');
+            const retrySquadsData = retrySquadsResponse.data;
+            const retryActiveSquads = retrySquadsData.data?.pagination?.total || 0;
             
             setUsers(retryFetchedUsers);
             setStats({
               totalUsers: retryFetchedUsers.length,
               activeUsers: retryFetchedUsers.filter((u: User) => u.isActive).length,
-              totalTournaments: 5, // TODO: Fetch from tournaments API
-              activeSquads: 12 // TODO: Fetch from squads API
+              totalTournaments: retryTotalTournaments,
+              activeSquads: retryActiveSquads
             });
             
             console.log('Successfully fetched data after token refresh');
