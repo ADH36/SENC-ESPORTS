@@ -7,6 +7,7 @@ import Loading, { PageLoading } from '@/components/Loading';
 import Modal, { ConfirmModal } from '@/components/Modal';
 import AdminDashboard from '@/components/AdminDashboard';
 import ContentManagement from '@/components/ContentManagement';
+import AdminGuide from '@/components/AdminGuide';
 import { 
   Users, 
   Search, 
@@ -211,7 +212,7 @@ export default function Admin() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'content' | 'reports'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'content' | 'reports' | 'guide'>('dashboard');
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -444,6 +445,16 @@ export default function Admin() {
               }`}
             >
               Reports & Analytics
+            </button>
+            <button
+              onClick={() => setActiveTab('guide')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'guide'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              User Guide
             </button>
           </nav>
         </div>
@@ -702,6 +713,10 @@ export default function Admin() {
             </Card>
           </div>
         </div>
+      )}
+
+      {activeTab === 'guide' && (
+        <AdminGuide />
       )}
     </div>
 
