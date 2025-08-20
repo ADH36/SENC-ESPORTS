@@ -12,6 +12,7 @@ import TournamentDetail from './pages/TournamentDetail';
 import TournamentEdit from './pages/TournamentEdit';
 import Squads from './pages/Squads';
 import SquadDetail from './pages/SquadDetail';
+import SquadEdit from './pages/SquadEdit';
 import Admin from './pages/Admin';
 import Manage from './pages/Manage';
 import Profile from './pages/Profile';
@@ -49,6 +50,7 @@ function App() {
           <Route path="/manage/tournaments/:id/edit" element={<TournamentEdit />} />
           <Route path="/squads" element={<Squads />} />
           <Route path="/squads/:id" element={<SquadDetail />} />
+          <Route path="/squads/:id/edit" element={<SquadEdit />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/guide" element={<AdminGuide />} />
           <Route path="/manage" element={<Manage />} />
