@@ -4,6 +4,7 @@ export interface Tournament {
   id: string;
   name: string;
   game: string;
+  gameId?: number;
   format: 'single_elimination' | 'double_elimination' | 'round_robin' | 'swiss';
   maxParticipants: number;
   prizePool?: number;
@@ -14,6 +15,9 @@ export interface Tournament {
   status: 'draft' | 'open' | 'registration_closed' | 'in_progress' | 'completed' | 'cancelled';
   managerId: string;
   bannerUrl?: string;
+  registrationType: 'squad' | 'single' | 'both';
+  registrationCost: number;
+  isPaid: boolean;
   createdAt: Date;
   updatedAt: Date;
   manager?: {
@@ -21,6 +25,11 @@ export interface Tournament {
     username: string;
     firstName: string;
     lastName: string;
+  };
+  gameInfo?: {
+    id: number;
+    name: string;
+    image_url?: string;
   };
   registrationCount?: number;
 }
@@ -43,6 +52,7 @@ export interface TournamentRegistration {
 export interface CreateTournamentData {
   name: string;
   game: string;
+  gameId?: number;
   format: 'single_elimination' | 'double_elimination' | 'round_robin' | 'swiss';
   maxParticipants: number;
   prizePool?: number;
@@ -51,11 +61,15 @@ export interface CreateTournamentData {
   startDate: Date;
   endDate?: Date;
   managerId: string;
+  registrationType?: 'squad' | 'single' | 'both';
+  registrationCost?: number;
+  isPaid?: boolean;
 }
 
 export interface UpdateTournamentData {
   name?: string;
   game?: string;
+  gameId?: number;
   format?: 'single_elimination' | 'double_elimination' | 'round_robin' | 'swiss';
   maxParticipants?: number;
   prizePool?: number;
@@ -65,7 +79,45 @@ export interface UpdateTournamentData {
   endDate?: Date;
   status?: 'draft' | 'open' | 'registration_closed' | 'in_progress' | 'completed' | 'cancelled';
   bannerUrl?: string;
+  registrationType?: 'squad' | 'single' | 'both';
+  registrationCost?: number;
+  isPaid?: boolean;
 }
+
+const mapTournamentFromDb = (row: any): Tournament => {
+  return {
+    id: row.id,
+    name: row.name,
+    game: row.game,
+    gameId: row.game_id,
+    format: row.format,
+    maxParticipants: row.max_participants,
+    prizePool: row.prize_pool,
+    rules: row.rules,
+    registrationDeadline: new Date(row.registration_deadline),
+    startDate: new Date(row.start_date),
+    endDate: row.end_date ? new Date(row.end_date) : undefined,
+    status: row.status,
+    managerId: row.manager_id,
+    bannerUrl: row.banner_url,
+    registrationType: row.registration_type || 'both',
+    registrationCost: row.registration_cost || 0,
+    isPaid: row.is_paid || false,
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
+    manager: row.manager_username ? {
+      id: row.manager_id,
+      username: row.manager_username,
+      firstName: row.manager_first_name,
+      lastName: row.manager_last_name,
+    } : undefined,
+    gameInfo: row.game_name ? {
+      id: row.game_id,
+      name: row.game_name,
+      image_url: row.game_image_url,
+    } : undefined,
+  };
+};
 
 class TournamentService {
   async createTournament(tournamentData: CreateTournamentData): Promise<Tournament> {
@@ -95,6 +147,7 @@ class TournamentService {
       id: db.raw('(UUID())'),
       name,
       game,
+      game_id: tournamentData.gameId,
       format,
       max_participants: maxParticipants,
       prize_pool: prizePool,
@@ -103,7 +156,10 @@ class TournamentService {
       start_date: startDate,
       end_date: endDate,
       status: 'draft',
-      manager_id: managerId
+      manager_id: managerId,
+      registration_type: tournamentData.registrationType || 'both',
+      registration_cost: tournamentData.registrationCost || 0,
+      is_paid: tournamentData.isPaid || false
     }).returning('id');
 
     return this.getTournamentById(tournamentId.id);
@@ -115,6 +171,7 @@ class TournamentService {
         'tournaments.id',
         'tournaments.name',
         'tournaments.game',
+        'tournaments.game_id as gameId',
         'tournaments.format',
         'tournaments.max_participants as maxParticipants',
         'tournaments.prize_pool as prizePool',
@@ -125,13 +182,19 @@ class TournamentService {
         'tournaments.status',
         'tournaments.manager_id as managerId',
         'tournaments.banner_url as bannerUrl',
+        'tournaments.registration_type as registrationType',
+        'tournaments.registration_cost as registrationCost',
+        'tournaments.is_paid as isPaid',
         'tournaments.created_at as createdAt',
         'tournaments.updated_at as updatedAt',
         'users.username as managerUsername',
         'users.first_name as managerFirstName',
-        'users.last_name as managerLastName'
+        'users.last_name as managerLastName',
+        'games.name as gameName',
+        'games.image_url as gameImageUrl'
       )
       .leftJoin('users', 'tournaments.manager_id', 'users.id')
+      .leftJoin('games', 'tournaments.game_id', 'games.id')
       .where('tournaments.id', id)
       .first();
 
@@ -153,6 +216,11 @@ class TournamentService {
         firstName: tournament.managerFirstName,
         lastName: tournament.managerLastName
       },
+      gameInfo: tournament.gameId ? {
+        id: tournament.gameId,
+        name: tournament.gameName,
+        image_url: tournament.gameImageUrl
+      } : undefined,
       registrationCount: registrationCount?.count || 0
     };
   }
@@ -170,6 +238,7 @@ class TournamentService {
         'tournaments.id',
         'tournaments.name',
         'tournaments.game',
+        'tournaments.game_id as gameId',
         'tournaments.format',
         'tournaments.max_participants as maxParticipants',
         'tournaments.prize_pool as prizePool',
@@ -180,13 +249,19 @@ class TournamentService {
         'tournaments.status',
         'tournaments.manager_id as managerId',
         'tournaments.banner_url as bannerUrl',
+        'tournaments.registration_type as registrationType',
+        'tournaments.registration_cost as registrationCost',
+        'tournaments.is_paid as isPaid',
         'tournaments.created_at as createdAt',
         'tournaments.updated_at as updatedAt',
         'users.username as managerUsername',
         'users.first_name as managerFirstName',
-        'users.last_name as managerLastName'
+        'users.last_name as managerLastName',
+        'games.name as gameName',
+        'games.image_url as gameImageUrl'
       )
       .leftJoin('users', 'tournaments.manager_id', 'users.id')
+      .leftJoin('games', 'tournaments.game_id', 'games.id')
       .orderBy('tournaments.created_at', 'desc')
       .limit(limit)
       .offset(offset);
@@ -215,7 +290,12 @@ class TournamentService {
         username: tournament.managerUsername,
         firstName: tournament.managerFirstName,
         lastName: tournament.managerLastName
-      }
+      },
+      gameInfo: tournament.gameId ? {
+        id: tournament.gameId,
+        name: tournament.gameName,
+        image_url: tournament.gameImageUrl
+      } : undefined
     }));
 
     return {
@@ -240,6 +320,7 @@ class TournamentService {
     
     if (updateData.name) updateFields.name = updateData.name;
     if (updateData.game) updateFields.game = updateData.game;
+    if (updateData.gameId !== undefined) updateFields.game_id = updateData.gameId;
     if (updateData.format) updateFields.format = updateData.format;
     if (updateData.maxParticipants) updateFields.max_participants = updateData.maxParticipants;
     if (updateData.prizePool !== undefined) updateFields.prize_pool = updateData.prizePool;
@@ -249,6 +330,9 @@ class TournamentService {
     if (updateData.endDate !== undefined) updateFields.end_date = updateData.endDate;
     if (updateData.status) updateFields.status = updateData.status;
     if (updateData.bannerUrl !== undefined) updateFields.banner_url = updateData.bannerUrl;
+    if (updateData.registrationType) updateFields.registration_type = updateData.registrationType;
+    if (updateData.registrationCost !== undefined) updateFields.registration_cost = updateData.registrationCost;
+    if (updateData.isPaid !== undefined) updateFields.is_paid = updateData.isPaid;
 
     await db('tournaments').where('id', id).update(updateFields);
     return this.getTournamentById(id);

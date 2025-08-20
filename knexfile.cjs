@@ -1,6 +1,4 @@
-const dotenv = require('dotenv');
-
-dotenv.config();
+require('dotenv').config();
 
 module.exports = {
   development: {
@@ -33,6 +31,10 @@ module.exports = {
     },
     migrations: {
       directory: './migrations',
+      extension: 'cjs'
+    },
+    seeds: {
+      directory: './seeds',
       extension: 'cjs'
     },
     pool: {

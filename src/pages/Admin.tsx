@@ -26,7 +26,11 @@ import {
   Trophy,
   Activity,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  Gamepad2,
+  Edit,
+  Save,
+  X
 } from 'lucide-react';
 
 interface User {
@@ -214,12 +218,23 @@ export default function Admin() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'content' | 'reports' | 'guide'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'content' | 'games' | 'reports' | 'guide'>('dashboard');
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
     totalTournaments: 0,
     activeSquads: 0
+  });
+
+  // Games management state
+  const [games, setGames] = useState<any[]>([]);
+  const [showCreateGameModal, setShowCreateGameModal] = useState(false);
+  const [editingGame, setEditingGame] = useState<any>(null);
+  const [gameFormData, setGameFormData] = useState({
+    name: '',
+    description: '',
+    imageUrl: '',
+    status: 'active'
   });
 
   // Fetch real data from API
@@ -580,6 +595,16 @@ export default function Admin() {
               }`}
             >
               Content Management
+            </button>
+            <button
+              onClick={() => setActiveTab('games')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'games'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Games Management
             </button>
             <button
               onClick={() => setActiveTab('reports')}

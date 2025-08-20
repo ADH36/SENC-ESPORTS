@@ -5,6 +5,7 @@ export interface Tournament {
   id: string;
   name: string;
   game: string;
+  gameId?: number;
   format: 'single_elimination' | 'double_elimination' | 'round_robin' | 'swiss';
   maxParticipants: number;
   currentParticipants?: number;
@@ -17,6 +18,9 @@ export interface Tournament {
   managerId: string;
   bannerUrl?: string;
   isPublic?: boolean;
+  registrationType?: 'single' | 'squad' | 'both';
+  registrationCost?: number;
+  isPaid?: boolean;
   createdAt: string;
   updatedAt: string;
   manager?: {
@@ -24,6 +28,10 @@ export interface Tournament {
     username: string;
     firstName: string;
     lastName: string;
+  };
+  gameInfo?: {
+    name: string;
+    imageUrl?: string;
   };
   registrationCount?: number;
 }

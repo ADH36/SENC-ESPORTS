@@ -135,15 +135,39 @@ function CreateTournamentModal({ isOpen, onClose, onSave, isLoading }: CreateTou
   const [formData, setFormData] = useState({
     name: '',
     game: '',
+    gameId: '',
     format: 'single-elimination',
     maxParticipants: 16,
     prizePool: 0,
     startDate: '',
     endDate: '',
     description: '',
-    isPublic: true
+    isPublic: true,
+    registrationType: 'both',
+    registrationCost: 0,
+    isPaid: false
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [games, setGames] = useState<Array<{id: number, name: string}>>([]);
+
+  // Fetch games on component mount
+  useEffect(() => {
+    const fetchGames = async () => {
+      try {
+        const response = await fetch('/api/games');
+        if (response.ok) {
+          const gamesData = await response.json();
+          setGames(gamesData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch games:', error);
+      }
+    };
+    
+    if (isOpen) {
+      fetchGames();
+    }
+  }, [isOpen]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -152,8 +176,8 @@ function CreateTournamentModal({ isOpen, onClose, onSave, isLoading }: CreateTou
       newErrors.name = 'Tournament name is required';
     }
 
-    if (!formData.game.trim()) {
-      newErrors.game = 'Game is required';
+    if (!formData.gameId) {
+      newErrors.gameId = 'Game selection is required';
     }
 
     if (!formData.startDate) {
@@ -170,6 +194,10 @@ function CreateTournamentModal({ isOpen, onClose, onSave, isLoading }: CreateTou
       newErrors.maxParticipants = 'Must allow at least 2 participants';
     }
 
+    if (formData.isPaid && formData.registrationCost <= 0) {
+      newErrors.registrationCost = 'Registration cost must be greater than 0 for paid tournaments';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -178,17 +206,24 @@ function CreateTournamentModal({ isOpen, onClose, onSave, isLoading }: CreateTou
     e.preventDefault();
     
     if (validateForm()) {
-      onSave(formData);
+      onSave({
+        ...formData,
+        gameId: parseInt(formData.gameId)
+      });
       setFormData({
         name: '',
         game: '',
+        gameId: '',
         format: 'single-elimination',
         maxParticipants: 16,
         prizePool: 0,
         startDate: '',
         endDate: '',
         description: '',
-        isPublic: true
+        isPublic: true,
+        registrationType: 'both',
+        registrationCost: 0,
+        isPaid: false
       });
       setErrors({});
     }
@@ -212,16 +247,36 @@ function CreateTournamentModal({ isOpen, onClose, onSave, isLoading }: CreateTou
             error={errors.name}
             required
           />
-          <Input
-            label="Game"
-            value={formData.game}
-            onChange={(e) => handleChange('game', e.target.value)}
-            error={errors.game}
-            required
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Game *
+            </label>
+            <select
+              value={formData.gameId}
+              onChange={(e) => {
+                const selectedGame = games.find(g => g.id.toString() === e.target.value);
+                handleChange('gameId', e.target.value);
+                handleChange('game', selectedGame?.name || '');
+              }}
+              className={`w-full px-3 py-2 bg-gray-700 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.gameId ? 'border-red-500' : 'border-gray-600'
+              }`}
+              required
+            >
+              <option value="">Select a game...</option>
+              {games.map((game) => (
+                <option key={game.id} value={game.id}>
+                  {game.name}
+                </option>
+              ))}
+            </select>
+            {errors.gameId && (
+              <p className="mt-1 text-sm text-red-400">{errors.gameId}</p>
+            )}
+          </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Format
@@ -235,6 +290,20 @@ function CreateTournamentModal({ isOpen, onClose, onSave, isLoading }: CreateTou
               <option value="double-elimination">Double Elimination</option>
               <option value="round-robin">Round Robin</option>
               <option value="swiss">Swiss System</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Registration Type
+            </label>
+            <select
+              value={formData.registrationType}
+              onChange={(e) => handleChange('registrationType', e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="both">Squad & Single Player</option>
+              <option value="squad">Squad Only</option>
+              <option value="single">Single Player Only</option>
             </select>
           </div>
           <Input
@@ -267,14 +336,47 @@ function CreateTournamentModal({ isOpen, onClose, onSave, isLoading }: CreateTou
           />
         </div>
         
-        <Input
-          label="Prize Pool ($)"
-          type="number"
-          value={formData.prizePool}
-          onChange={(e) => handleChange('prizePool', parseFloat(e.target.value) || 0)}
-          min={0}
-          step={0.01}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            label="Prize Pool ($)"
+            type="number"
+            value={formData.prizePool}
+            onChange={(e) => handleChange('prizePool', parseFloat(e.target.value) || 0)}
+            min={0}
+            step={0.01}
+          />
+          <div>
+            <div className="flex items-center mb-4">
+              <input
+                type="checkbox"
+                id="isPaid"
+                checked={formData.isPaid}
+                onChange={(e) => {
+                  handleChange('isPaid', e.target.checked);
+                  if (!e.target.checked) {
+                    handleChange('registrationCost', 0);
+                  }
+                }}
+                className="mr-2 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="isPaid" className="text-gray-300">
+                Paid Registration
+              </label>
+            </div>
+            {formData.isPaid && (
+              <Input
+                label="Registration Cost ($)"
+                type="number"
+                value={formData.registrationCost}
+                onChange={(e) => handleChange('registrationCost', parseFloat(e.target.value) || 0)}
+                error={errors.registrationCost}
+                min={0.01}
+                step={0.01}
+                required
+              />
+            )}
+          </div>
+        </div>
         
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
