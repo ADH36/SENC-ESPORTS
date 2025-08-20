@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Tournaments from './pages/Tournaments';
 import TournamentDetail from './pages/TournamentDetail';
+import TournamentEdit from './pages/TournamentEdit';
 import Squads from './pages/Squads';
 import SquadDetail from './pages/SquadDetail';
 import Admin from './pages/Admin';
@@ -45,6 +46,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/tournaments" element={<Tournaments />} />
           <Route path="/tournaments/:id" element={<TournamentDetail />} />
+          <Route path="/manage/tournaments/:id/edit" element={<TournamentEdit />} />
           <Route path="/squads" element={<Squads />} />
           <Route path="/squads/:id" element={<SquadDetail />} />
           <Route path="/admin" element={<Admin />} />
