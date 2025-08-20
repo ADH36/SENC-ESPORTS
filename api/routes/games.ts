@@ -1,6 +1,6 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateToken, AuthRequest } from '../middleware/auth';
 import * as gameService from '../services/gameService';
 
 const router = express.Router();
@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get all games (admin only)
-router.get('/admin', authenticateToken, async (req, res) => {
+router.get('/admin', authenticateToken, async (req: AuthRequest, res) => {
   try {
     // Check if user is admin
     if (req.user?.role !== 'admin') {
@@ -58,7 +58,7 @@ router.post('/',
     body('image_url').optional().isURL().withMessage('Image URL must be valid'),
     body('status').optional().isIn(['active', 'inactive']).withMessage('Status must be active or inactive')
   ],
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
       // Check if user is admin
       if (req.user?.role !== 'admin') {
@@ -98,7 +98,7 @@ router.put('/:id',
     body('image_url').optional().isURL().withMessage('Image URL must be valid'),
     body('status').optional().isIn(['active', 'inactive']).withMessage('Status must be active or inactive')
   ],
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
       // Check if user is admin
       if (req.user?.role !== 'admin') {
@@ -131,7 +131,7 @@ router.put('/:id',
 );
 
 // Delete game (admin only)
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
   try {
     // Check if user is admin
     if (req.user?.role !== 'admin') {
