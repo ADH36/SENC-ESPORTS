@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
+import axios from 'axios';
 import Button from '@/components/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/Card';
 import Input from '@/components/Input';
@@ -201,7 +202,7 @@ function ChangeRoleModal({ isOpen, onClose, user, onSave, isLoading }: ChangeRol
 }
 
 export default function Admin() {
-  const { user: currentUser } = useAuthStore();
+  const { user: currentUser, initializeAuth } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -224,23 +225,16 @@ export default function Admin() {
   // Fetch real data from API
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch users from API
-        const token = localStorage.getItem('accessToken');
-        const response = await fetch('/api/users', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch users');
-        }
-        
-        const data = await response.json();
-        const fetchedUsers = data.users || [];
+    setIsLoading(true);
+    try {
+      // Initialize authentication headers before making API calls
+      initializeAuth();
+      
+      // Fetch users from API using axios (configured in authStore)
+      const response = await axios.get('/api/users');
+      
+      const data = response.data;
+      const fetchedUsers = data.users || [];
         
         setUsers(fetchedUsers);
         setStats({
@@ -325,8 +319,6 @@ export default function Admin() {
     
     setIsUpdating(true);
     try {
-      const token = localStorage.getItem('accessToken');
-      
       if (!selectedUser.isActive) {
         // TODO: Implement reactivate user API endpoint
         console.log('Reactivate user functionality not yet implemented');
@@ -334,15 +326,9 @@ export default function Admin() {
       }
       
       // Deactivate user
-      const response = await fetch(`/api/users/${selectedUser.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await axios.delete(`/api/users/${selectedUser.id}`);
       
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error('Failed to deactivate user');
       }
       
@@ -386,16 +372,9 @@ export default function Admin() {
     
     setIsUpdating(true);
     try {
-      const token = localStorage.getItem('accessToken');
-      const response = await fetch(`/api/users/${selectedUser.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await axios.delete(`/api/users/${selectedUser.id}`);
       
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error('Failed to deactivate user');
       }
       

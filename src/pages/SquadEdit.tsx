@@ -16,7 +16,7 @@ interface SquadFormData {
 const SquadEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { currentSquad, fetchSquadById, updateSquad, loading, error } = useSquadStore();
+  const { currentSquad, fetchSquadById, updateSquad, isLoading, error } = useSquadStore();
   const { user } = useAuthStore();
   
   const [formData, setFormData] = useState<SquadFormData>({
@@ -139,7 +139,7 @@ const SquadEdit: React.FC = () => {
     navigate(`/squads/${id}`);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-white text-xl">Loading squad details...</div>
