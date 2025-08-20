@@ -157,20 +157,32 @@ export default function TournamentDetail() {
       
       if (registrationsResponse.ok) {
         const registrationsData = await registrationsResponse.json();
-        const tournamentRegistrations = registrationsData.data.registrations || [];
         
-        // Convert registrations to participants
-        const tournamentParticipants: Participant[] = tournamentRegistrations
-          .filter((reg: any) => reg.status === 'approved')
-          .map((reg: any, index: number) => ({
-            id: reg.id,
-            name: reg.participant?.name || `Participant ${index + 1}`,
-            type: reg.registrationType === 'squad' ? 'squad' : 'player',
-            seed: index + 1
-          }));
-        
-        setParticipants(tournamentParticipants);
-        setRegistrations(tournamentRegistrations);
+        // Add proper null checks for registrations data
+        if (registrationsData && registrationsData.data && Array.isArray(registrationsData.data.registrations)) {
+          const tournamentRegistrations = registrationsData.data.registrations;
+          
+          // Convert registrations to participants
+          const tournamentParticipants: Participant[] = tournamentRegistrations
+            .filter((reg: any) => reg && reg.status === 'approved')
+            .map((reg: any, index: number) => ({
+              id: reg.id || `temp-${index}`,
+              name: reg.participant?.name || `Participant ${index + 1}`,
+              type: reg.registrationType === 'squad' ? 'squad' : 'player',
+              seed: index + 1
+            }));
+          
+          setParticipants(tournamentParticipants);
+          setRegistrations(tournamentRegistrations);
+        } else {
+          console.warn('Invalid registrations data structure received:', registrationsData);
+          setParticipants([]);
+          setRegistrations([]);
+        }
+      } else {
+        console.warn('Failed to fetch registrations:', registrationsResponse.status);
+        setParticipants([]);
+        setRegistrations([]);
       }
       
       // Try to fetch bracket data from content API
@@ -183,16 +195,26 @@ export default function TournamentDetail() {
       
       if (bracketResponse.ok) {
         const bracketData = await bracketResponse.json();
-        const bracketContent = bracketData.data.items.find((item: any) => item.contentType === 'bracket');
         
-        if (bracketContent && bracketContent.content) {
-          const parsedContent = typeof bracketContent.content === 'string' 
-            ? JSON.parse(bracketContent.content) 
-            : bracketContent.content;
+        // Add proper null checks to prevent TypeError
+        if (bracketData && bracketData.data && Array.isArray(bracketData.data.items)) {
+          const bracketContent = bracketData.data.items.find((item: any) => item.contentType === 'bracket');
           
-          if (parsedContent.matches) {
-            setMatches(parsedContent.matches);
+          if (bracketContent && bracketContent.content) {
+            try {
+              const parsedContent = typeof bracketContent.content === 'string' 
+                ? JSON.parse(bracketContent.content) 
+                : bracketContent.content;
+              
+              if (parsedContent && parsedContent.matches && Array.isArray(parsedContent.matches)) {
+                setMatches(parsedContent.matches);
+              }
+            } catch (parseError) {
+              console.error('Failed to parse bracket content:', parseError);
+            }
           }
+        } else {
+          console.warn('Invalid bracket data structure received:', bracketData);
         }
       }
       
