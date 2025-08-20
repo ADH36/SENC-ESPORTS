@@ -488,7 +488,7 @@ class ContentService {
           lastName: log.userLastName
         }
       })),
-      total: totalCount?.count || 0
+      total: Number(totalCount?.count) || 0
     };
   }
 
@@ -533,7 +533,7 @@ class ContentService {
           lastName: log.userLastName
         }
       })),
-      total: totalCount?.count || 0
+      total: Number(totalCount?.count) || 0
     };
   }
 }
