@@ -5,6 +5,23 @@ import { validateYouTubeUrl } from '../middleware/validation.js';
 
 const router = Router();
 
+// Get all content items
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const contentItems = await contentService.getAllContent();
+
+    res.json({
+      success: true,
+      data: { contentItems }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get content items'
+    });
+  }
+});
+
 // Get content items for a tournament
 router.get('/tournament/:tournamentId', async (req: Request, res: Response) => {
   try {

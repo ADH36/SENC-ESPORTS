@@ -343,87 +343,14 @@ export default function ContentManagement() {
     fetchData();
   }, []);
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/tournaments', {
-        headers: {
-          'Authorization': `Bearer ${(user as any)?.token}`
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch tournaments');
-      }
-      
-      const data = await response.json();
-      setTournaments(data.tournaments || []);
-      setContentItems(data.contentItems || []);
-    } catch (error) {
-      console.error('Failed to fetch content data:', error);
-      // Fallback to mock data if API fails
-      const mockTournaments: Tournament[] = [
-        {
-          id: '1',
-          name: 'Spring Championship 2024',
-          game: 'League of Legends',
-          startDate: '2024-03-15T10:00:00Z',
-          status: 'active'
-        },
-        {
-          id: '2',
-          name: 'CS:GO Masters',
-          game: 'Counter-Strike: Global Offensive',
-          startDate: '2024-04-01T14:00:00Z',
-          status: 'upcoming'
-        }
-      ];
-
-      const mockContentItems: ContentItem[] = [
-        {
-          id: '1',
-          tournamentId: '1',
-          tournamentName: 'Spring Championship 2024',
-          type: 'bracket',
-          title: 'Quarter Finals Bracket',
-          content: 'Bracket content here...',
-          isVisible: true,
-          createdAt: '2024-01-15T10:00:00Z',
-          updatedAt: '2024-01-16T14:30:00Z',
-          createdBy: 'admin',
-          updatedBy: 'manager1'
-        },
-        {
-          id: '2',
-          tournamentId: '1',
-          tournamentName: 'Spring Championship 2024',
-          type: 'youtube_embed',
-          title: 'Championship Highlights',
-          content: 'Amazing highlights from the championship!',
-          youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-          youtubeVideoId: 'dQw4w9WgXcQ',
-          embedType: 'highlight',
-          isVisible: true,
-          createdAt: '2024-01-17T09:00:00Z',
-          updatedAt: '2024-01-17T09:00:00Z',
-          createdBy: 'manager1',
-          updatedBy: 'manager1'
-        }
-      ];
-
-      setTournaments(mockTournaments);
-      setContentItems(mockContentItems);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const fetchContentItems = async (tournamentId?: string) => {
     try {
+      const token = localStorage.getItem('token') || (user as any)?.token;
       const url = tournamentId ? `/api/content/tournament/${tournamentId}` : '/api/content';
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${(user as any)?.token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
       
@@ -432,10 +359,16 @@ export default function ContentManagement() {
       }
       
       const data = await response.json();
-      setContentItems(data.contentItems || []);
+      const contentItems = data.data?.contentItems || data.contentItems || [];
+      
+      const filtered = tournamentId 
+        ? contentItems.filter((item: any) => item.tournamentId === tournamentId)
+        : contentItems;
+      
+      setContentItems(filtered);
     } catch (error) {
       console.error('Failed to fetch content items:', error);
-      // Fallback to mock data if API fails
+      // Fallback to mock data
       const mockContentItems: ContentItem[] = [
         {
           id: '1',
@@ -467,14 +400,57 @@ export default function ContentManagement() {
           updatedBy: 'manager1'
         }
       ];
-      
-      const filtered = tournamentId 
-        ? mockContentItems.filter(item => item.tournamentId === tournamentId)
-        : mockContentItems;
-      
-      setContentItems(filtered);
+      setContentItems(mockContentItems);
     }
   };
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch tournaments
+      const token = localStorage.getItem('token') || (user as any)?.token;
+      const tournamentsResponse = await fetch('/api/tournaments', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!tournamentsResponse.ok) {
+        throw new Error('Failed to fetch tournaments');
+      }
+      
+      const tournamentsData = await tournamentsResponse.json();
+      setTournaments(tournamentsData.data?.tournaments || []);
+      
+      // Fetch content items separately
+      await fetchContentItems();
+    } catch (error) {
+      console.error('Failed to fetch content data:', error);
+      // Fallback to mock data for tournaments
+      const mockTournaments = [
+        {
+          id: '1',
+          name: 'Spring Championship 2024',
+          game: 'League of Legends',
+          status: 'active' as const,
+          startDate: '2024-03-01'
+        },
+        {
+          id: '2',
+          name: 'Summer Cup 2024',
+          game: 'Valorant',
+          status: 'upcoming' as const,
+          startDate: '2024-06-01'
+        }
+      ];
+      setTournaments(mockTournaments);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
 
   const filteredContent = contentItems.filter(item => {
     const matchesSearch = 

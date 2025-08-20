@@ -117,12 +117,48 @@ class ContentService {
     return !!userPermissions;
   }
 
+  async getAllContent(): Promise<ContentItem[]> {
+    const contentItems = await db('content_items')
+      .select(
+        'content_items.id',
+        'content_items.tournament_id as tournamentId',
+        'content_items.content_type as type',
+        'content_items.title',
+        'content_items.description',
+        'content_items.content',
+        'content_items.is_active as isActive',
+        'content_items.created_by as createdBy',
+        'content_items.updated_by as updatedBy',
+        'content_items.created_at as createdAt',
+        'content_items.updated_at as updatedAt',
+        'tournaments.name as tournamentName',
+        'users.username as creatorUsername',
+        'users.first_name as creatorFirstName',
+        'users.last_name as creatorLastName'
+      )
+      .leftJoin('users', 'content_items.created_by', 'users.id')
+      .leftJoin('tournaments', 'content_items.tournament_id', 'tournaments.id')
+      .where('content_items.is_active', true)
+      .orderBy('content_items.created_at', 'desc');
+
+    return contentItems.map(item => ({
+      ...item,
+      content: typeof item.content === 'string' ? JSON.parse(item.content) : item.content,
+      creator: {
+        id: item.createdBy,
+        username: item.creatorUsername,
+        firstName: item.creatorFirstName,
+        lastName: item.creatorLastName
+      }
+    }));
+  }
+
   async getContentByTournament(tournamentId: string, type?: string): Promise<ContentItem[]> {
     let query = db('content_items')
       .select(
         'content_items.id',
         'content_items.tournament_id as tournamentId',
-        'content_items.type',
+        'content_items.content_type as type',
         'content_items.title',
         'content_items.description',
         'content_items.content',
@@ -141,7 +177,7 @@ class ContentService {
       .orderBy('content_items.created_at', 'desc');
 
     if (type) {
-      query = query.where('content_items.type', type);
+      query = query.where('content_items.content_type', type);
     }
 
     const contentItems = await query;
@@ -170,7 +206,7 @@ class ContentService {
     // Check if bracket already exists for this tournament
     const existingBracket = await db('content_items')
       .where('tournament_id', tournamentId)
-      .where('type', 'bracket')
+      .where('content_type', 'bracket')
       .first();
 
     let contentItem;
@@ -210,7 +246,7 @@ class ContentService {
       await db('content_items').insert({
         id: contentId,
         tournament_id: tournamentId,
-        type: 'bracket',
+        content_type: 'bracket',
         title,
         description,
         content: JSON.stringify(bracketData),
@@ -256,7 +292,7 @@ class ContentService {
       await trx('content_items').insert({
         id: contentId,
         tournament_id: tournamentId,
-        type: 'youtube_embed',
+        content_type: 'youtube_embed',
         title,
         description,
         content: JSON.stringify({ embedId }),
@@ -390,7 +426,7 @@ class ContentService {
       {
         title: existingContent.title,
         description: existingContent.description,
-        type: existingContent.type
+        type: existingContent.content_type
       },
       null
     );
@@ -398,7 +434,7 @@ class ContentService {
     // Start transaction
     await db.transaction(async (trx) => {
       // Delete related YouTube embed if exists
-      if (existingContent.type === 'youtube_embed') {
+      if (existingContent.content_type === 'youtube_embed') {
         await trx('youtube_embeds')
           .where('content_item_id', contentId)
           .del();
