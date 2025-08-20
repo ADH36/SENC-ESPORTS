@@ -240,7 +240,7 @@ export default function Admin() {
         }
         
         const data = await response.json();
-        const fetchedUsers = data.data.users || [];
+        const fetchedUsers = data.users || [];
         
         setUsers(fetchedUsers);
         setStats({
