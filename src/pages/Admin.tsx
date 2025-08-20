@@ -202,7 +202,7 @@ function ChangeRoleModal({ isOpen, onClose, user, onSave, isLoading }: ChangeRol
 }
 
 export default function Admin() {
-  const { user: currentUser, initializeAuth } = useAuthStore();
+  const { user: currentUser, initializeAuth, accessToken } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -225,17 +225,26 @@ export default function Admin() {
   // Fetch real data from API
   useEffect(() => {
     const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      // Initialize authentication headers before making API calls
-      initializeAuth();
-      
-      // Fetch users from API using axios (configured in authStore)
-      const response = await axios.get('/api/users');
-      
-      const data = response.data;
-      const fetchedUsers = data.users || [];
+      setIsLoading(true);
+      try {
+        // Initialize authentication headers before making API calls
+        initializeAuth();
         
+        // Debug: Log axios configuration
+        console.log('Axios base URL:', axios.defaults.baseURL);
+        console.log('Axios headers:', axios.defaults.headers.common);
+        console.log('Current user:', currentUser);
+        console.log('Access token exists:', !!accessToken);
+        
+        // Fetch users from API using axios (configured in authStore)
+        console.log('Making request to /api/users...');
+        const response = await axios.get('/api/users');
+        console.log('API Response:', response);
+        
+        const data = response.data;
+        const fetchedUsers = data.users || [];
+        console.log('Fetched users:', fetchedUsers);
+          
         setUsers(fetchedUsers);
         setStats({
           totalUsers: fetchedUsers.length,
@@ -243,8 +252,45 @@ export default function Admin() {
           totalTournaments: 5, // TODO: Fetch from tournaments API
           activeSquads: 12 // TODO: Fetch from squads API
         });
-      } catch (error) {
-        console.error('Failed to fetch admin data:', error);
+      } catch (error: any) {
+        console.error('Failed to fetch admin data - Full error:', error);
+        console.error('Error message:', error.message);
+        console.error('Error response:', error.response);
+        console.error('Error status:', error.response?.status);
+        console.error('Error data:', error.response?.data);
+        console.error('Request config:', error.config);
+        
+        // Handle 401 errors specifically (token expired)
+        if (error.response?.status === 401) {
+          console.log('Token expired, attempting to refresh...');
+          try {
+            await refreshAccessToken();
+            console.log('Token refreshed successfully, retrying request...');
+            
+            // Retry the request after token refresh
+            const retryResponse = await axios.get('/api/users');
+            const retryData = retryResponse.data;
+            const retryFetchedUsers = retryData.users || [];
+            
+            setUsers(retryFetchedUsers);
+            setStats({
+              totalUsers: retryFetchedUsers.length,
+              activeUsers: retryFetchedUsers.filter((u: User) => u.isActive).length,
+              totalTournaments: 5, // TODO: Fetch from tournaments API
+              activeSquads: 12 // TODO: Fetch from squads API
+            });
+            
+            console.log('Successfully fetched data after token refresh');
+            return; // Exit early on success
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            showToast.error('Session expired. Please log in again.');
+            logout();
+            window.location.href = '/login';
+            return;
+          }
+        }
+        
         showToast.apiError(error, 'Failed to load users');
         setUsers([]);
         setStats({
@@ -259,7 +305,7 @@ export default function Admin() {
     };
 
     fetchData();
-  }, []);
+  }, [refreshAccessToken, logout]);
 
   if (currentUser?.role !== 'admin') {
     return (

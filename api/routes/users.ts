@@ -77,12 +77,18 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Get all users (admin only)
 router.get('/', authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
+    console.log('GET /api/users - Request received');
+    console.log('User from token:', (req as any).user);
+    console.log('Query params:', req.query);
+    
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     
+    console.log('Calling userService.getAllUsers with page:', page, 'limit:', limit);
     const result = await userService.getAllUsers(page, limit);
+    console.log('userService.getAllUsers result:', result);
 
-    res.json({
+    const response = {
       success: true,
       data: {
         users: result.users,
@@ -93,8 +99,14 @@ router.get('/', authenticateToken, requireAdmin, async (req: Request, res: Respo
           totalPages: Math.ceil(result.total / limit)
         }
       }
-    });
+    };
+    
+    console.log('Sending response:', response);
+    res.json(response);
   } catch (error) {
+    console.error('Error in GET /api/users:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get users'
