@@ -16,6 +16,7 @@ export interface Tournament {
   status: 'draft' | 'open' | 'registration_closed' | 'in_progress' | 'completed' | 'cancelled';
   managerId: string;
   bannerUrl?: string;
+  isPublic?: boolean;
   createdAt: string;
   updatedAt: string;
   manager?: {

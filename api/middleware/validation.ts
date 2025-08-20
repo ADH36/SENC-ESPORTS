@@ -94,3 +94,32 @@ export const validateTournamentCreation = [
     .withMessage('Valid start date is required'),
   handleValidationErrors
 ];
+
+// YouTube URL validation
+export const validateYouTubeUrl = [
+  body('youtubeUrl')
+    .isURL()
+    .custom((value) => {
+      const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)[a-zA-Z0-9_-]{11}(&.*)?$/;
+      if (!youtubeRegex.test(value)) {
+        throw new Error('Invalid YouTube URL format');
+      }
+      return true;
+    })
+    .withMessage('Valid YouTube URL is required'),
+  body('title')
+    .optional()
+    .isLength({ min: 1, max: 200 })
+    .trim()
+    .withMessage('Title must be 1-200 characters'),
+  body('description')
+    .optional()
+    .isLength({ max: 1000 })
+    .trim()
+    .withMessage('Description must be less than 1000 characters'),
+  body('embedType')
+    .optional()
+    .isIn(['highlight', 'live_stream', 'recap', 'interview'])
+    .withMessage('Invalid embed type'),
+  handleValidationErrors
+];

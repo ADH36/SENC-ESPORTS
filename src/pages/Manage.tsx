@@ -7,6 +7,7 @@ import Card, { CardContent, CardHeader, CardTitle } from '@/components/Card';
 import Input from '@/components/Input';
 import Loading, { PageLoading } from '@/components/Loading';
 import Modal, { ConfirmModal } from '@/components/Modal';
+import { showToast } from '@/components/Toast';
 import { 
   Plus,
   Search,
@@ -34,12 +35,12 @@ interface Tournament {
   game: string;
   format: string;
   maxParticipants: number;
-  registrationCount: number;
-  prizePool: number;
+  registrationCount?: number;
+  prizePool?: number;
   startDate: string;
-  endDate: string;
-  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
-  isPublic: boolean;
+  endDate?: string;
+  status: 'draft' | 'open' | 'registration_closed' | 'in_progress' | 'completed' | 'cancelled';
+  isPublic?: boolean;
   createdAt: string;
 }
 
@@ -333,65 +334,24 @@ export default function Manage() {
     totalPrizePool: 0
   });
 
-  // Mock tournaments data - replace with actual API calls
-  const [mockTournaments] = useState<Tournament[]>([
-    {
-      id: '1',
-      name: 'Spring Championship',
-      game: 'League of Legends',
-      format: 'single-elimination',
-      maxParticipants: 32,
-      registrationCount: 24,
-      prizePool: 5000,
-      startDate: '2024-02-15T10:00:00Z',
-      endDate: '2024-02-17T18:00:00Z',
-      status: 'upcoming',
-      isPublic: true,
-      createdAt: '2024-01-15T10:00:00Z'
-    },
-    {
-      id: '2',
-      name: 'Weekly Valorant Cup',
-      game: 'Valorant',
-      format: 'double-elimination',
-      maxParticipants: 16,
-      registrationCount: 16,
-      prizePool: 1000,
-      startDate: '2024-01-20T14:00:00Z',
-      endDate: '2024-01-21T20:00:00Z',
-      status: 'ongoing',
-      isPublic: true,
-      createdAt: '2024-01-10T09:00:00Z'
-    },
-    {
-      id: '3',
-      name: 'CS2 Masters',
-      game: 'Counter-Strike 2',
-      format: 'swiss',
-      maxParticipants: 24,
-      registrationCount: 20,
-      prizePool: 2500,
-      startDate: '2024-01-05T12:00:00Z',
-      endDate: '2024-01-07T22:00:00Z',
-      status: 'completed',
-      isPublic: true,
-      createdAt: '2024-01-01T08:00:00Z'
-    }
-  ]);
+  // Fetch tournaments from API on component mount
+  useEffect(() => {
+    fetchTournaments();
+  }, [fetchTournaments]);
 
   useEffect(() => {
-    // Calculate stats from mock data
-    const totalRegistrations = mockTournaments.reduce((sum, t) => sum + t.registrationCount, 0);
-    const totalPrizePool = mockTournaments.reduce((sum, t) => sum + t.prizePool, 0);
-    const activeTournaments = mockTournaments.filter(t => t.status === 'upcoming' || t.status === 'ongoing').length;
+    // Calculate stats from real tournament data
+    const totalRegistrations = tournaments.reduce((sum, t) => sum + (t.registrationCount || 0), 0);
+    const totalPrizePool = tournaments.reduce((sum, t) => sum + (t.prizePool || 0), 0);
+    const activeTournaments = tournaments.filter(t => t.status === 'open' || t.status === 'in_progress').length;
     
     setStats({
-      totalTournaments: mockTournaments.length,
+      totalTournaments: tournaments.length,
       activeTournaments,
       totalRegistrations,
       totalPrizePool
     });
-  }, [mockTournaments]);
+  }, [tournaments]);
 
   if (user?.role !== 'manager' && user?.role !== 'admin') {
     return (
@@ -411,24 +371,26 @@ export default function Manage() {
     return <PageLoading text="Loading management panel..." />;
   }
 
-  const filteredTournaments = mockTournaments.filter(tournament => {
+  const filteredTournaments = tournaments.filter(tournament => {
     const matchesSearch = tournament.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tournament.game.toLowerCase().includes(searchTerm.toLowerCase());
+                         (tournament.game || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || tournament.status === statusFilter;
     const matchesGame = gameFilter === 'all' || tournament.game === gameFilter;
     
     return matchesSearch && matchesStatus && matchesGame;
   });
 
-  const uniqueGames = Array.from(new Set(mockTournaments.map(t => t.game)));
+  const uniqueGames = Array.from(new Set(tournaments.map(t => t.game).filter(Boolean)));
 
   const handleCreateTournament = async (data: any) => {
     setIsCreating(true);
     try {
       await createTournament(data);
+      showToast.success('Tournament created successfully!');
       setShowCreateModal(false);
     } catch (error) {
       console.error('Failed to create tournament:', error);
+      showToast.apiError(error, 'Failed to create tournament');
     } finally {
       setIsCreating(false);
     }
@@ -440,10 +402,12 @@ export default function Manage() {
     setIsDeleting(true);
     try {
       await deleteTournament(selectedTournament.id);
+      showToast.success('Tournament deleted successfully!');
       setShowDeleteModal(false);
       setSelectedTournament(null);
     } catch (error) {
       console.error('Failed to delete tournament:', error);
+      showToast.apiError(error, 'Failed to delete tournament');
     } finally {
       setIsDeleting(false);
     }
@@ -466,9 +430,13 @@ export default function Manage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'upcoming':
+      case 'draft':
+        return 'bg-gray-900 text-gray-300';
+      case 'open':
         return 'bg-blue-900 text-blue-300';
-      case 'ongoing':
+      case 'registration_closed':
+        return 'bg-yellow-900 text-yellow-300';
+      case 'in_progress':
         return 'bg-green-900 text-green-300';
       case 'completed':
         return 'bg-gray-900 text-gray-300';

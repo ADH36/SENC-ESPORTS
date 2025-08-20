@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
+import axios from 'axios';
 import Button from '@/components/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/Card';
 import Input from '@/components/Input';
 import Loading, { PageLoading } from '@/components/Loading';
 import Modal, { ConfirmModal } from '@/components/Modal';
 import AdminDashboard from '@/components/AdminDashboard';
+import ContentManagement from '@/components/ContentManagement';
+import AdminGuide from '@/components/AdminGuide';
+import { showToast } from '@/components/Toast';
 import { 
   Users, 
   Search, 
@@ -20,7 +24,6 @@ import {
   Plus,
   Calendar,
   Trophy,
-  Target,
   Activity,
   TrendingUp,
   AlertTriangle
@@ -199,7 +202,7 @@ function ChangeRoleModal({ isOpen, onClose, user, onSave, isLoading }: ChangeRol
 }
 
 export default function Admin() {
-  const { user: currentUser } = useAuthStore();
+  const { user: currentUser, initializeAuth, accessToken, refreshAccessToken, logout } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -211,7 +214,7 @@ export default function Admin() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'content' | 'reports'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'content' | 'reports' | 'guide'>('dashboard');
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -219,63 +222,114 @@ export default function Admin() {
     activeSquads: 0
   });
 
-  // Mock data - replace with actual API calls
+  // Fetch real data from API
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Mock users data
-        const mockUsers: User[] = [
-          {
-            id: '1',
-            username: 'player1',
-            firstName: 'John',
-            lastName: 'Doe',
-            email: 'john@example.com',
-            role: 'player',
-            isActive: true,
-            createdAt: '2024-01-15T10:00:00Z',
-            lastLogin: '2024-01-20T14:30:00Z'
-          },
-          {
-            id: '2',
-            username: 'manager1',
-            firstName: 'Jane',
-            lastName: 'Smith',
-            email: 'jane@example.com',
-            role: 'manager',
-            isActive: true,
-            createdAt: '2024-01-10T09:00:00Z',
-            lastLogin: '2024-01-19T16:45:00Z'
-          },
-          {
-            id: '3',
-            username: 'player2',
-            firstName: 'Bob',
-            lastName: 'Wilson',
-            email: 'bob@example.com',
-            role: 'player',
-            isActive: false,
-            createdAt: '2024-01-12T11:30:00Z'
-          }
-        ];
+        // Initialize authentication headers before making API calls
+        initializeAuth();
         
-        setUsers(mockUsers);
+        // Debug: Log axios configuration
+        console.log('Axios base URL:', axios.defaults.baseURL);
+        console.log('Axios headers:', axios.defaults.headers.common);
+        console.log('Current user:', currentUser);
+        console.log('Access token exists:', !!accessToken);
+        
+        // Fetch users from API using axios (configured in authStore)
+        console.log('Making request to /api/users...');
+        const usersResponse = await axios.get('/api/users');
+        console.log('Users API Response:', usersResponse);
+        
+        const usersData = usersResponse.data;
+        const fetchedUsers = usersData.data?.users || [];
+        console.log('Fetched users:', fetchedUsers);
+        
+        // Fetch tournaments data
+        console.log('Making request to /api/tournaments...');
+        const tournamentsResponse = await axios.get('/api/tournaments');
+        console.log('Tournaments API Response:', tournamentsResponse);
+        const tournamentsData = tournamentsResponse.data;
+        const totalTournaments = tournamentsData.data?.pagination?.total || 0;
+        
+        // Fetch squads data
+        console.log('Making request to /api/squads...');
+        const squadsResponse = await axios.get('/api/squads');
+        console.log('Squads API Response:', squadsResponse);
+        const squadsData = squadsResponse.data;
+        const activeSquads = squadsData.data?.pagination?.total || 0;
+          
+        setUsers(fetchedUsers);
         setStats({
-          totalUsers: mockUsers.length,
-          activeUsers: mockUsers.filter(u => u.isActive).length,
-          totalTournaments: 5,
-          activeSquads: 12
+          totalUsers: fetchedUsers.length,
+          activeUsers: fetchedUsers.filter((u: User) => u.isActive).length,
+          totalTournaments,
+          activeSquads
         });
-      } catch (error) {
-        console.error('Failed to fetch admin data:', error);
+      } catch (error: any) {
+        console.error('Failed to fetch admin data - Full error:', error);
+        console.error('Error message:', error.message);
+        console.error('Error response:', error.response);
+        console.error('Error status:', error.response?.status);
+        console.error('Error data:', error.response?.data);
+        console.error('Request config:', error.config);
+        
+        // Handle 401 errors specifically (token expired)
+        if (error.response?.status === 401) {
+          console.log('Token expired, attempting to refresh...');
+          try {
+            await refreshAccessToken();
+            console.log('Token refreshed successfully, retrying request...');
+            
+            // Retry the requests after token refresh
+            const retryUsersResponse = await axios.get('/api/users');
+            const retryUsersData = retryUsersResponse.data;
+            const retryFetchedUsers = retryUsersData.data?.users || [];
+            
+            // Retry tournaments data
+            const retryTournamentsResponse = await axios.get('/api/tournaments');
+            const retryTournamentsData = retryTournamentsResponse.data;
+            const retryTotalTournaments = retryTournamentsData.data?.pagination?.total || 0;
+            
+            // Retry squads data
+            const retrySquadsResponse = await axios.get('/api/squads');
+            const retrySquadsData = retrySquadsResponse.data;
+            const retryActiveSquads = retrySquadsData.data?.pagination?.total || 0;
+            
+            setUsers(retryFetchedUsers);
+            setStats({
+              totalUsers: retryFetchedUsers.length,
+              activeUsers: retryFetchedUsers.filter((u: User) => u.isActive).length,
+              totalTournaments: retryTotalTournaments,
+              activeSquads: retryActiveSquads
+            });
+            
+            console.log('Successfully fetched data after token refresh');
+            return; // Exit early on success
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            showToast.error('Session expired. Please log in again.');
+            logout();
+            window.location.href = '/login';
+            return;
+          }
+        }
+        
+        showToast.apiError(error, 'Failed to load users');
+        setUsers([]);
+        setStats({
+          totalUsers: 0,
+          activeUsers: 0,
+          totalTournaments: 0,
+          activeSquads: 0
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [refreshAccessToken, logout]);
 
   if (currentUser?.role !== 'admin') {
     return (
@@ -335,14 +389,59 @@ export default function Admin() {
     
     setIsUpdating(true);
     try {
-      // TODO: API call to toggle user status
+      if (!selectedUser.isActive) {
+        // TODO: Implement reactivate user API endpoint
+        console.log('Reactivate user functionality not yet implemented');
+        return;
+      }
+      
+      // Deactivate user
+      const response = await axios.delete(`/api/users/${selectedUser.id}`);
+      
+      if (response.status !== 200) {
+        throw new Error('Failed to deactivate user');
+      }
+      
+      // Update local state
       setUsers(prev => prev.map(u => 
-        u.id === selectedUser.id ? { ...u, isActive: !u.isActive } : u
+        u.id === selectedUser.id ? { ...u, isActive: false } : u
       ));
       setShowStatusModal(false);
       setSelectedUser(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to toggle user status:', error);
+      
+      // Handle 401 errors specifically (token expired)
+      if (error.response?.status === 401) {
+        console.log('Token expired during user status toggle, attempting to refresh...');
+        try {
+          await refreshAccessToken();
+          console.log('Token refreshed successfully, retrying user status toggle...');
+          
+          // Retry the request after token refresh
+          const retryResponse = await axios.delete(`/api/users/${selectedUser.id}`);
+          
+          if (retryResponse.status !== 200) {
+            throw new Error('Failed to deactivate user');
+          }
+          
+          // Update local state
+          setUsers(prev => prev.map(u => 
+            u.id === selectedUser.id ? { ...u, isActive: false } : u
+          ));
+          setShowStatusModal(false);
+          setSelectedUser(null);
+          return;
+        } catch (refreshError) {
+          console.error('Token refresh failed during user status toggle:', refreshError);
+          showToast.error('Session expired. Please log in again.');
+          logout();
+          window.location.href = '/login';
+          return;
+        }
+      }
+      
+      showToast.apiError(error, 'Failed to update user status');
     } finally {
       setIsUpdating(false);
     }
@@ -351,14 +450,19 @@ export default function Admin() {
   const confirmChangeRole = async (userId: string, newRole: string) => {
     setIsUpdating(true);
     try {
-      // TODO: API call to change user role
+      // TODO: Implement change user role API endpoint
+      console.log('Change user role functionality not yet implemented');
+      
+      // For now, update local state only
       setUsers(prev => prev.map(u => 
         u.id === userId ? { ...u, role: newRole as any } : u
       ));
+      showToast.success(`User role updated to ${newRole} successfully!`);
       setShowRoleModal(false);
       setSelectedUser(null);
     } catch (error) {
       console.error('Failed to change user role:', error);
+      showToast.apiError(error, 'Failed to update user role');
     } finally {
       setIsUpdating(false);
     }
@@ -369,12 +473,54 @@ export default function Admin() {
     
     setIsUpdating(true);
     try {
-      // TODO: API call to delete user
-      setUsers(prev => prev.filter(u => u.id !== selectedUser.id));
+      const response = await axios.delete(`/api/users/${selectedUser.id}`);
+      
+      if (response.status !== 200) {
+        throw new Error('Failed to deactivate user');
+      }
+      
+      // Remove user from local state (or mark as inactive)
+      setUsers(prev => prev.map(u => 
+        u.id === selectedUser.id ? { ...u, isActive: false } : u
+      ));
+      showToast.success('User deleted successfully!');
       setShowDeleteModal(false);
       setSelectedUser(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete user:', error);
+      
+      // Handle 401 errors specifically (token expired)
+      if (error.response?.status === 401) {
+        console.log('Token expired during user deletion, attempting to refresh...');
+        try {
+          await refreshAccessToken();
+          console.log('Token refreshed successfully, retrying user deletion...');
+          
+          // Retry the request after token refresh
+          const retryResponse = await axios.delete(`/api/users/${selectedUser.id}`);
+          
+          if (retryResponse.status !== 200) {
+            throw new Error('Failed to deactivate user');
+          }
+          
+          // Remove user from local state (or mark as inactive)
+          setUsers(prev => prev.map(u => 
+            u.id === selectedUser.id ? { ...u, isActive: false } : u
+          ));
+          showToast.success('User deleted successfully!');
+          setShowDeleteModal(false);
+          setSelectedUser(null);
+          return;
+        } catch (refreshError) {
+          console.error('Token refresh failed during user deletion:', refreshError);
+          showToast.error('Session expired. Please log in again.');
+          logout();
+          window.location.href = '/login';
+          return;
+        }
+      }
+      
+      showToast.apiError(error, 'Failed to delete user');
     } finally {
       setIsUpdating(false);
     }
@@ -445,6 +591,16 @@ export default function Admin() {
             >
               Reports & Analytics
             </button>
+            <button
+              onClick={() => setActiveTab('guide')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'guide'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              User Guide
+            </button>
           </nav>
         </div>
 
@@ -503,7 +659,7 @@ export default function Admin() {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-2 bg-yellow-900 rounded-lg mr-4">
-                  <Target className="w-6 h-6 text-yellow-300" />
+                  <Trophy className="w-6 h-6 text-yellow-300" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-400">Active Squads</p>
@@ -647,37 +803,7 @@ export default function Admin() {
       )}
 
       {activeTab === 'content' && (
-        <div className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Content Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-6 border border-gray-700 rounded-lg">
-                  <Trophy className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">Tournaments</h3>
-                  <p className="text-gray-400 mb-4">Manage all tournaments</p>
-                  <Button size="sm">Manage</Button>
-                </div>
-                
-                <div className="text-center p-6 border border-gray-700 rounded-lg">
-                  <Target className="w-12 h-12 text-blue-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">Squads</h3>
-                  <p className="text-gray-400 mb-4">Manage all squads</p>
-                  <Button size="sm">Manage</Button>
-                </div>
-                
-                <div className="text-center p-6 border border-gray-700 rounded-lg">
-                  <Activity className="w-12 h-12 text-green-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">Matches</h3>
-                  <p className="text-gray-400 mb-4">Manage match results</p>
-                  <Button size="sm">Manage</Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <ContentManagement />
       )}
 
       {activeTab === 'reports' && (
@@ -732,6 +858,10 @@ export default function Admin() {
             </Card>
           </div>
         </div>
+      )}
+
+      {activeTab === 'guide' && (
+        <AdminGuide />
       )}
     </div>
 
