@@ -273,6 +273,14 @@ export default function Admin() {
         console.log('Squads API Response:', squadsResponse);
         const squadsData = squadsResponse.data;
         const activeSquads = squadsData.data?.pagination?.total || 0;
+        
+        // Fetch games data
+        console.log('Making request to /api/games...');
+        const gamesResponse = await axios.get('/api/games');
+        console.log('Games API Response:', gamesResponse);
+        const gamesData = gamesResponse.data;
+        const fetchedGames = gamesData.data?.games || [];
+        setGames(fetchedGames);
           
         setUsers(fetchedUsers);
         setStats({
@@ -554,6 +562,77 @@ export default function Admin() {
     }
   };
 
+  // Games management functions
+  const handleCreateGame = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post('/api/games', {
+        name: gameFormData.name,
+        description: gameFormData.description,
+        image_url: gameFormData.imageUrl,
+        status: gameFormData.status
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setGames(prev => [...prev, response.data]);
+      setShowCreateGameModal(false);
+      setGameFormData({ name: '', description: '', imageUrl: '', status: 'active' });
+      showToast.success('Game created successfully!');
+    } catch (error: any) {
+      showToast.apiError(error, 'Failed to create game');
+    }
+  };
+
+  const handleUpdateGame = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.put(`/api/games/${editingGame.id}`, {
+        name: gameFormData.name,
+        description: gameFormData.description,
+        image_url: gameFormData.imageUrl,
+        status: gameFormData.status
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setGames(prev => prev.map(game => 
+        game.id === editingGame.id ? response.data : game
+      ));
+      setEditingGame(null);
+      setGameFormData({ name: '', description: '', imageUrl: '', status: 'active' });
+      showToast.success('Game updated successfully!');
+    } catch (error: any) {
+      showToast.apiError(error, 'Failed to update game');
+    }
+  };
+
+  const handleDeleteGame = async (gameId: number) => {
+    if (!confirm('Are you sure you want to delete this game?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`/api/games/${gameId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setGames(prev => prev.filter(game => game.id !== gameId));
+      showToast.success('Game deleted successfully!');
+    } catch (error: any) {
+      showToast.apiError(error, 'Failed to delete game');
+    }
+  };
+
+  const openEditGame = (game: any) => {
+    setEditingGame(game);
+    setGameFormData({
+      name: game.name,
+      description: game.description || '',
+      imageUrl: game.image_url || '',
+      status: game.status
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -831,6 +910,94 @@ export default function Admin() {
         <ContentManagement />
       )}
 
+      {activeTab === 'games' && (
+        <div className="space-y-8">
+          {/* Games Management Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-2">Games Management</h2>
+              <p className="text-gray-400">Manage available games for tournaments</p>
+            </div>
+            <Button 
+              onClick={() => setShowCreateGameModal(true)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Game
+            </Button>
+          </div>
+
+          {/* Games Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {games.map((game) => (
+              <Card key={game.id} className="bg-gray-800 border-gray-700">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
+                        <Gamepad2 className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">{game.name}</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          game.status === 'active' 
+                            ? 'bg-green-900 text-green-300' 
+                            : 'bg-red-900 text-red-300'
+                        }`}>
+                          {game.status}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openEditGame(game)}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteGame(game.id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  {game.description && (
+                    <p className="text-gray-400 text-sm mb-3">{game.description}</p>
+                  )}
+                  {game.image_url && (
+                    <img 
+                      src={game.image_url} 
+                      alt={game.name}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {games.length === 0 && (
+            <div className="text-center py-12">
+              <Gamepad2 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-400 mb-2">No games found</h3>
+              <p className="text-gray-500 mb-4">Add your first game to get started</p>
+              <Button 
+                onClick={() => setShowCreateGameModal(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Game
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
       {activeTab === 'reports' && (
         <div className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -931,6 +1098,196 @@ export default function Admin() {
         variant="danger"
         loading={isUpdating}
       />
+
+      {/* Create Game Modal */}
+      {showCreateGameModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">Add New Game</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowCreateGameModal(false);
+                  setGameFormData({ name: '', description: '', imageUrl: '', status: 'active' });
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Game Name *
+                </label>
+                <Input
+                  value={gameFormData.name}
+                  onChange={(e) => setGameFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter game name"
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={gameFormData.description}
+                  onChange={(e) => setGameFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Enter game description"
+                  rows={3}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Image URL
+                </label>
+                <Input
+                  value={gameFormData.imageUrl}
+                  onChange={(e) => setGameFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                  placeholder="Enter image URL"
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Status
+                </label>
+                <select
+                  value={gameFormData.status}
+                  onChange={(e) => setGameFormData(prev => ({ ...prev, status: e.target.value }))}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 mt-6">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowCreateGameModal(false);
+                  setGameFormData({ name: '', description: '', imageUrl: '', status: 'active' });
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateGame}
+                disabled={!gameFormData.name.trim()}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Create Game
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Game Modal */}
+      {editingGame && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-white">Edit Game</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditingGame(null);
+                  setGameFormData({ name: '', description: '', imageUrl: '', status: 'active' });
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Game Name *
+                </label>
+                <Input
+                  value={gameFormData.name}
+                  onChange={(e) => setGameFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter game name"
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={gameFormData.description}
+                  onChange={(e) => setGameFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Enter game description"
+                  rows={3}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Image URL
+                </label>
+                <Input
+                  value={gameFormData.imageUrl}
+                  onChange={(e) => setGameFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
+                  placeholder="Enter image URL"
+                  className="bg-gray-700 border-gray-600 text-white"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Status
+                </label>
+                <select
+                  value={gameFormData.status}
+                  onChange={(e) => setGameFormData(prev => ({ ...prev, status: e.target.value }))}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 mt-6">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setEditingGame(null);
+                  setGameFormData({ name: '', description: '', imageUrl: '', status: 'active' });
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUpdateGame}
+                disabled={!gameFormData.name.trim()}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Update Game
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
