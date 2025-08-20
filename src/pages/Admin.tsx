@@ -503,7 +503,7 @@ export default function Admin() {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-2 bg-yellow-900 rounded-lg mr-4">
-                  <Target className="w-6 h-6 text-yellow-300" />
+                  <Trophy className="w-6 h-6 text-yellow-300" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-400">Active Squads</p>

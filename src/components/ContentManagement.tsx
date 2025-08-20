@@ -348,7 +348,7 @@ export default function ContentManagement() {
     try {
       const response = await fetch('/api/tournaments', {
         headers: {
-          'Authorization': `Bearer ${user?.token}`
+          'Authorization': `Bearer ${(user as any)?.token}`
         }
       });
       
@@ -423,7 +423,7 @@ export default function ContentManagement() {
       const url = tournamentId ? `/api/content/tournament/${tournamentId}` : '/api/content';
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${user?.token}`
+          'Authorization': `Bearer ${(user as any)?.token}`
         }
       });
       
@@ -524,7 +524,7 @@ export default function ContentManagement() {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user?.token}`
+          'Authorization': `Bearer ${(user as any)?.token}`
         },
         body: JSON.stringify({
           ...data,
@@ -553,42 +553,7 @@ export default function ContentManagement() {
     }
   };
 
-  const handleSaveYouTube = async () => {
-    if (!youtubeForm.tournamentId || !youtubeForm.title || !youtubeForm.youtubeUrl) {
-      return;
-    }
 
-    try {
-      const response = await fetch('/api/content/youtube', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user?.token}`
-        },
-        body: JSON.stringify(youtubeForm)
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to save YouTube embed');
-      }
-      
-      // Refresh content after successful save
-      await fetchContentItems();
-      setShowYouTubeModal(false);
-      setYoutubeForm({ 
-        tournamentId: '', 
-        title: '', 
-        content: '', 
-        youtubeUrl: '', 
-        embedType: 'highlight', 
-        isVisible: true 
-      });
-    } catch (error) {
-      console.error('Failed to save YouTube embed:', error);
-      // For demo purposes, still close modal on error
-      setShowYouTubeModal(false);
-    }
-  };
 
   const handleDeleteContent = async (contentId: string) => {
     if (!confirm('Are you sure you want to delete this content?')) return;
@@ -597,7 +562,7 @@ export default function ContentManagement() {
       const response = await fetch(`/api/content/${contentId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${user?.token}`
+          'Authorization': `Bearer ${(user as any)?.token}`
         }
       });
       
