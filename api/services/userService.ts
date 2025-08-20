@@ -1,4 +1,5 @@
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import db from '../config/database';
 
 export interface User {
@@ -46,9 +47,12 @@ class UserService {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // Generate UUID for the user
+    const userId = crypto.randomUUID();
+
     // Insert user
-    const [userId] = await db('users').insert({
-      id: db.raw('(UUID())'),
+    await db('users').insert({
+      id: userId,
       email,
       username,
       password_hash: passwordHash,
@@ -56,10 +60,10 @@ class UserService {
       last_name: lastName,
       role,
       is_active: true
-    }).returning('id');
+    });
 
     // Return created user
-    return this.getUserById(userId.id);
+    return this.getUserById(userId);
   }
 
   async getUserById(id: string): Promise<User> {
