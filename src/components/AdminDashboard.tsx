@@ -3,6 +3,7 @@ import Card, { CardContent, CardHeader, CardTitle } from '@/components/Card';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
 import Modal from '@/components/Modal';
+import axios from 'axios';
 import {
   Activity,
   Settings,
@@ -23,17 +24,19 @@ import {
   Target,
   TrendingUp,
   Download,
-  Upload
+  Upload,
+  MemoryStick
 } from 'lucide-react';
 
 interface SystemStats {
   serverUptime: string;
   cpuUsage: number;
   memoryUsage: number;
-  diskUsage: number;
+  diskUsage?: number;
   activeConnections: number;
-  totalRequests: number;
-  errorRate: number;
+  totalRequests?: number;
+  errorRate?: number;
+  timestamp?: string;
 }
 
 interface ActivityLog {
@@ -201,14 +204,16 @@ function SystemSettingsModal({ isOpen, onClose, onSave }: SystemSettingsModalPro
 
 export default function AdminDashboard() {
   const [systemStats, setSystemStats] = useState<SystemStats>({
-    serverUptime: '7d 14h 32m',
-    cpuUsage: 45,
-    memoryUsage: 68,
+    serverUptime: 'Loading...',
+    cpuUsage: 0,
+    memoryUsage: 0,
     diskUsage: 32,
-    activeConnections: 1247,
+    activeConnections: 0,
     totalRequests: 89432,
     errorRate: 0.02
   });
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
 
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([
     {
@@ -255,6 +260,52 @@ export default function AdminDashboard() {
 
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
+  // Fetch system statistics from API
+  const fetchSystemStats = async () => {
+    try {
+      setStatsError(null);
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await axios.get('/api/system/stats', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (response.data.success) {
+        setSystemStats(prevStats => ({
+          ...prevStats,
+          serverUptime: response.data.data.serverUptime,
+          cpuUsage: response.data.data.cpuUsage,
+          memoryUsage: response.data.data.memoryUsage,
+          activeConnections: response.data.data.activeConnections,
+          timestamp: response.data.data.timestamp
+        }));
+      } else {
+        throw new Error(response.data.error || 'Failed to fetch system statistics');
+      }
+    } catch (error) {
+      console.error('Error fetching system stats:', error);
+      setStatsError(error instanceof Error ? error.message : 'Failed to fetch system statistics');
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
+
+  // Load system stats on component mount and set up periodic refresh
+  useEffect(() => {
+    fetchSystemStats();
+    
+    // Refresh stats every 30 seconds
+    const interval = setInterval(fetchSystemStats, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   const handleSaveSettings = (settings: any) => {
     console.log('Saving settings:', settings);
     // TODO: API call to save settings
@@ -288,6 +339,29 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
+      {/* Error Banner */}
+      {statsError && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3 text-red-400">
+              <AlertTriangle className="w-5 h-5" />
+              <div>
+                <p className="font-medium">Failed to load system statistics</p>
+                <p className="text-sm text-gray-400">{statsError}</p>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={fetchSystemStats}
+                className="ml-auto"
+              >
+                Retry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* System Health */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
@@ -295,7 +369,13 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400">Server Uptime</p>
-                <p className="text-2xl font-bold text-white">{systemStats.serverUptime}</p>
+                <p className="text-2xl font-bold text-white">
+                  {isLoadingStats ? (
+                    <span className="animate-pulse">Loading...</span>
+                  ) : (
+                    systemStats.serverUptime
+                  )}
+                </p>
               </div>
               <Server className="w-8 h-8 text-green-400" />
             </div>
@@ -307,14 +387,22 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400">CPU Usage</p>
-                <p className="text-2xl font-bold text-white">{systemStats.cpuUsage}%</p>
+                <p className="text-2xl font-bold text-white">
+                  {isLoadingStats ? (
+                    <span className="animate-pulse">--</span>
+                  ) : (
+                    `${systemStats.cpuUsage}%`
+                  )}
+                </p>
               </div>
               <Cpu className="w-8 h-8 text-blue-400" />
             </div>
             <div className="mt-2 bg-gray-700 rounded-full h-2">
               <div 
-                className="bg-blue-500 h-2 rounded-full" 
-                style={{ width: `${systemStats.cpuUsage}%` }}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  isLoadingStats ? 'bg-gray-600 animate-pulse' : 'bg-blue-500'
+                }`}
+                style={{ width: `${isLoadingStats ? 0 : systemStats.cpuUsage}%` }}
               ></div>
             </div>
           </CardContent>
@@ -325,14 +413,22 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400">Memory Usage</p>
-                <p className="text-2xl font-bold text-white">{systemStats.memoryUsage}%</p>
+                <p className="text-2xl font-bold text-white">
+                  {isLoadingStats ? (
+                    <span className="animate-pulse">--</span>
+                  ) : (
+                    `${systemStats.memoryUsage}%`
+                  )}
+                </p>
               </div>
-              <HardDrive className="w-8 h-8 text-purple-400" />
+              <MemoryStick className="w-8 h-8 text-yellow-400" />
             </div>
             <div className="mt-2 bg-gray-700 rounded-full h-2">
               <div 
-                className="bg-purple-500 h-2 rounded-full" 
-                style={{ width: `${systemStats.memoryUsage}%` }}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  isLoadingStats ? 'bg-gray-600 animate-pulse' : 'bg-yellow-500'
+                }`}
+                style={{ width: `${isLoadingStats ? 0 : systemStats.memoryUsage}%` }}
               ></div>
             </div>
           </CardContent>
@@ -343,9 +439,15 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-400">Active Connections</p>
-                <p className="text-2xl font-bold text-white">{systemStats.activeConnections.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-white">
+                  {isLoadingStats ? (
+                    <span className="animate-pulse">--</span>
+                  ) : (
+                    systemStats.activeConnections.toLocaleString()
+                  )}
+                </p>
               </div>
-              <Wifi className="w-8 h-8 text-yellow-400" />
+              <Activity className="w-8 h-8 text-purple-400" />
             </div>
           </CardContent>
         </Card>

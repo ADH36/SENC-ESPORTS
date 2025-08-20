@@ -12,6 +12,7 @@ import userRoutes from './routes/users.js';
 import squadRoutes from './routes/squads.js';
 import tournamentRoutes from './routes/tournaments.js';
 import contentRoutes from './routes/content.js';
+import systemRoutes from './routes/system.js';
 
 // for esm mode
 const __filename = fileURLToPath(import.meta.url);
@@ -44,6 +45,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/squads', squadRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use('/api/content', contentRoutes);
+app.use('/api/system', systemRoutes);
 
 /**
  * health
@@ -67,7 +69,8 @@ app.get('/api', (req, res) => {
       users: '/api/users',
       squads: '/api/squads',
       tournaments: '/api/tournaments',
-      content: '/api/content'
+      content: '/api/content',
+      system: '/api/system'
     }
   });
 });
