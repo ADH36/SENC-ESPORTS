@@ -90,12 +90,12 @@ export default function TournamentEdit() {
           return;
         }
 
-        const response = await fetch(`http://localhost:3000/api/tournaments/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const response = await fetch(`/api/tournaments/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
 
         if (!response.ok) {
           throw new Error(`Failed to fetch tournament: ${response.statusText}`);
@@ -210,14 +210,14 @@ export default function TournamentEdit() {
         status: formData.status
       };
 
-      const response = await fetch(`http://localhost:3000/api/tournaments/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updateData)
-      });
+      const response = await fetch(`/api/tournaments/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData)
+    });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
