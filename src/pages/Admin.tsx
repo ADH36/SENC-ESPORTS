@@ -202,7 +202,7 @@ function ChangeRoleModal({ isOpen, onClose, user, onSave, isLoading }: ChangeRol
 }
 
 export default function Admin() {
-  const { user: currentUser, initializeAuth, accessToken } = useAuthStore();
+  const { user: currentUser, initializeAuth, accessToken, refreshAccessToken, logout } = useAuthStore();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -384,8 +384,39 @@ export default function Admin() {
       ));
       setShowStatusModal(false);
       setSelectedUser(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to toggle user status:', error);
+      
+      // Handle 401 errors specifically (token expired)
+      if (error.response?.status === 401) {
+        console.log('Token expired during user status toggle, attempting to refresh...');
+        try {
+          await refreshAccessToken();
+          console.log('Token refreshed successfully, retrying user status toggle...');
+          
+          // Retry the request after token refresh
+          const retryResponse = await axios.delete(`/api/users/${selectedUser.id}`);
+          
+          if (retryResponse.status !== 200) {
+            throw new Error('Failed to deactivate user');
+          }
+          
+          // Update local state
+          setUsers(prev => prev.map(u => 
+            u.id === selectedUser.id ? { ...u, isActive: false } : u
+          ));
+          setShowStatusModal(false);
+          setSelectedUser(null);
+          return;
+        } catch (refreshError) {
+          console.error('Token refresh failed during user status toggle:', refreshError);
+          showToast.error('Session expired. Please log in again.');
+          logout();
+          window.location.href = '/login';
+          return;
+        }
+      }
+      
       showToast.apiError(error, 'Failed to update user status');
     } finally {
       setIsUpdating(false);
@@ -431,8 +462,40 @@ export default function Admin() {
       showToast.success('User deleted successfully!');
       setShowDeleteModal(false);
       setSelectedUser(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete user:', error);
+      
+      // Handle 401 errors specifically (token expired)
+      if (error.response?.status === 401) {
+        console.log('Token expired during user deletion, attempting to refresh...');
+        try {
+          await refreshAccessToken();
+          console.log('Token refreshed successfully, retrying user deletion...');
+          
+          // Retry the request after token refresh
+          const retryResponse = await axios.delete(`/api/users/${selectedUser.id}`);
+          
+          if (retryResponse.status !== 200) {
+            throw new Error('Failed to deactivate user');
+          }
+          
+          // Remove user from local state (or mark as inactive)
+          setUsers(prev => prev.map(u => 
+            u.id === selectedUser.id ? { ...u, isActive: false } : u
+          ));
+          showToast.success('User deleted successfully!');
+          setShowDeleteModal(false);
+          setSelectedUser(null);
+          return;
+        } catch (refreshError) {
+          console.error('Token refresh failed during user deletion:', refreshError);
+          showToast.error('Session expired. Please log in again.');
+          logout();
+          window.location.href = '/login';
+          return;
+        }
+      }
+      
       showToast.apiError(error, 'Failed to delete user');
     } finally {
       setIsUpdating(false);
