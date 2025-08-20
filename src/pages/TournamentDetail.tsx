@@ -8,6 +8,7 @@ import Loading, { PageLoading } from '@/components/Loading';
 import Modal, { ConfirmModal } from '@/components/Modal';
 import Input from '@/components/Input';
 import Bracket, { Participant, Match } from '@/components/Bracket';
+import TournamentContent from '@/components/TournamentContent';
 import { 
   Calendar, 
   MapPin, 
@@ -329,7 +330,7 @@ export default function TournamentDetail() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Bracket
+              Content
             </button>
             <button
               onClick={() => setActiveTab('participants')}
@@ -563,35 +564,17 @@ export default function TournamentDetail() {
 
         {activeTab === 'bracket' && (
           <div className="space-y-6">
-            {currentTournament.status === 'draft' ? (
-              <Card>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <Trophy className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-white mb-2">Bracket Not Available</h3>
-                    <p className="text-gray-400">
-                      The tournament bracket will be available once the tournament starts.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Tournament Bracket</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Bracket
-                    tournamentId={currentTournament.id}
-                    participants={participants}
-                    matches={matches}
-                    onUpdateMatch={canManage() ? handleUpdateMatch : undefined}
-                    onScheduleMatch={canManage() ? handleScheduleMatch : undefined}
-                    format={currentTournament.format}
-                  />
-                </CardContent>
-              </Card>
-            )}
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-white">Tournament Content</h3>
+              <p className="text-gray-400 text-sm">
+                Brackets, highlights, and live streams
+              </p>
+            </div>
+            
+            <TournamentContent 
+              tournamentId={id!} 
+              tournamentName={currentTournament?.name || 'Tournament'}
+            />
           </div>
         )}
 

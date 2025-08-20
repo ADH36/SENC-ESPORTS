@@ -6,6 +6,7 @@ import Input from '@/components/Input';
 import Loading, { PageLoading } from '@/components/Loading';
 import Modal, { ConfirmModal } from '@/components/Modal';
 import AdminDashboard from '@/components/AdminDashboard';
+import ContentManagement from '@/components/ContentManagement';
 import { 
   Users, 
   Search, 
@@ -20,7 +21,6 @@ import {
   Plus,
   Calendar,
   Trophy,
-  Target,
   Activity,
   TrendingUp,
   AlertTriangle
@@ -647,37 +647,7 @@ export default function Admin() {
       )}
 
       {activeTab === 'content' && (
-        <div className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Content Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center p-6 border border-gray-700 rounded-lg">
-                  <Trophy className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">Tournaments</h3>
-                  <p className="text-gray-400 mb-4">Manage all tournaments</p>
-                  <Button size="sm">Manage</Button>
-                </div>
-                
-                <div className="text-center p-6 border border-gray-700 rounded-lg">
-                  <Target className="w-12 h-12 text-blue-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">Squads</h3>
-                  <p className="text-gray-400 mb-4">Manage all squads</p>
-                  <Button size="sm">Manage</Button>
-                </div>
-                
-                <div className="text-center p-6 border border-gray-700 rounded-lg">
-                  <Activity className="w-12 h-12 text-green-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">Matches</h3>
-                  <p className="text-gray-400 mb-4">Manage match results</p>
-                  <Button size="sm">Manage</Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <ContentManagement />
       )}
 
       {activeTab === 'reports' && (

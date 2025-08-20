@@ -11,6 +11,7 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import squadRoutes from './routes/squads.js';
 import tournamentRoutes from './routes/tournaments.js';
+import contentRoutes from './routes/content.js';
 
 // for esm mode
 const __filename = fileURLToPath(import.meta.url);
@@ -42,6 +43,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/squads', squadRoutes);
 app.use('/api/tournaments', tournamentRoutes);
+app.use('/api/content', contentRoutes);
 
 /**
  * health
@@ -64,7 +66,8 @@ app.get('/api', (req, res) => {
       auth: '/api/auth',
       users: '/api/users',
       squads: '/api/squads',
-      tournaments: '/api/tournaments'
+      tournaments: '/api/tournaments',
+      content: '/api/content'
     }
   });
 });
