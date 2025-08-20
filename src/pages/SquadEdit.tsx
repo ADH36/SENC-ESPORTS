@@ -48,11 +48,16 @@ const SquadEdit: React.FC = () => {
     }
   }, [currentSquad]);
 
-  // Authentication check - only squad captain can edit
+  // Authentication check - squad captain, admin, or manager can edit
   useEffect(() => {
-    if (currentSquad && user && currentSquad.captainId !== user.id) {
-      toast.error('You are not authorized to edit this squad');
-      navigate(`/squads/${id}`);
+    if (currentSquad && user) {
+      const isSquadCaptain = currentSquad.captainId === user.id;
+      const isAdminOrManager = user.role === 'admin' || user.role === 'manager';
+      
+      if (!isSquadCaptain && !isAdminOrManager) {
+        toast.error('You are not authorized to edit this squad');
+        navigate(`/squads/${id}`);
+      }
     }
   }, [currentSquad, user, id, navigate]);
 
