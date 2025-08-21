@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3002;
 
 const server = app.listen(PORT, () => {
   console.log(`Server ready on port ${PORT}`);
-  console.log('Wallet type conversion fixes applied - Port 3005');
+  console.log('Wallet type conversion fixes applied - Server running');
 });
 
 /**
