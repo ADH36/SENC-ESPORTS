@@ -675,4 +675,188 @@ export default function AdminWalletManagement() {
       {/* User Wallets Section */}
       {activeSection === 'wallets' && (
         <div className="space-y-6">
-          {/* Search for specific user wallet
+          {/* Search for specific user wallet */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Search User Wallet</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex space-x-4">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Enter user ID or username..."
+                    value={userIdSearch}
+                    onChange={(e) => setUserIdSearch(e.target.value)}
+                    className="bg-gray-700 border-gray-600 text-white"
+                  />
+                </div>
+                <Button onClick={handleSearchWallet} className="bg-blue-600 hover:bg-blue-700">
+                  <Search className="w-4 h-4 mr-2" />
+                  Search
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Selected Wallet Details */}
+          {selectedWallet && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Wallet Details</CardTitle>
+                  <Button
+                    onClick={() => setShowAdjustModal(true)}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    <DollarSign className="w-4 h-4 mr-2" />
+                    Adjust Balance
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-lg font-semibold text-white mb-2">User Information</h4>
+                      <div className="space-y-2 text-sm">
+                        <p><span className="text-gray-400">Name:</span> <span className="text-white">{selectedWallet.user?.firstName} {selectedWallet.user?.lastName}</span></p>
+                        <p><span className="text-gray-400">Username:</span> <span className="text-white">@{selectedWallet.user?.username}</span></p>
+                        <p><span className="text-gray-400">Email:</span> <span className="text-white">{selectedWallet.user?.email}</span></p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-lg font-semibold text-white mb-2">Wallet Information</h4>
+                      <div className="space-y-2 text-sm">
+                        <p><span className="text-gray-400">Wallet ID:</span> <span className="text-white font-mono">{selectedWallet.walletId}</span></p>
+                        <p><span className="text-gray-400">Balance:</span> <span className="text-white text-lg font-bold">${selectedWallet.balance.toFixed(2)}</span></p>
+                        <p><span className="text-gray-400">Created:</span> <span className="text-white">{new Date(selectedWallet.createdAt).toLocaleDateString()}</span></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6">
+                  <Button
+                    onClick={() => {
+                      fetchTransactions(selectedWallet.userId, 1, true);
+                      setActiveSection('transactions');
+                    }}
+                    variant="ghost"
+                    className="w-full"
+                  >
+                    View Transaction History
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* All Transactions Section */}
+      {activeSection === 'transactions' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Transaction History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading && transactions.length === 0 ? (
+              <div className="flex justify-center py-8">
+                <Loading />
+              </div>
+            ) : transactions.length === 0 ? (
+              <div className="text-center py-8">
+                <DollarSign className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-400">No transactions found</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {transactions.map((transaction) => (
+                  <div key={transaction.id} className="bg-gray-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className={`p-2 rounded-lg ${
+                          transaction.type === 'deposit' ? 'bg-green-900' :
+                          transaction.type === 'withdrawal' ? 'bg-red-900' : 'bg-blue-900'
+                        }`}>
+                          {transaction.type === 'deposit' ? (
+                            <TrendingUp className="w-5 h-5 text-green-300" />
+                          ) : transaction.type === 'withdrawal' ? (
+                            <TrendingDown className="w-5 h-5 text-red-300" />
+                          ) : (
+                            <DollarSign className="w-5 h-5 text-blue-300" />
+                          )}
+                        </div>
+                        
+                        <div>
+                          <p className="text-white font-medium">
+                            {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            {transaction.description}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <p className={`text-lg font-bold ${
+                          transaction.amount > 0 ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                          {transaction.amount > 0 ? '+' : ''}${transaction.amount.toFixed(2)}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {new Date(transaction.createdAt).toLocaleDateString()}
+                        </p>
+                        {transaction.admin && (
+                          <p className="text-xs text-gray-500">
+                            by @{transaction.admin.username}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {transactionsPagination.hasMore && (
+                  <div className="text-center pt-4">
+                    <Button
+                      onClick={loadMoreTransactions}
+                      loading={isLoading}
+                      variant="ghost"
+                    >
+                      Load More Transactions
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Process Request Modal */}
+      <ProcessRequestModal
+        isOpen={showProcessModal}
+        onClose={() => {
+          setShowProcessModal(false);
+          setSelectedRequest(null);
+        }}
+        request={selectedRequest}
+        onProcess={handleProcessRequest}
+        isLoading={isProcessing}
+      />
+
+      {/* Adjust Balance Modal */}
+      <AdjustBalanceModal
+        isOpen={showAdjustModal}
+        onClose={() => setShowAdjustModal(false)}
+        wallet={selectedWallet}
+        onAdjust={handleAdjustBalance}
+        isLoading={isProcessing}
+      />
+    </div>
+  );
+}

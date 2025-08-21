@@ -9,6 +9,7 @@ import Modal, { ConfirmModal } from '@/components/Modal';
 import AdminDashboard from '@/components/AdminDashboard';
 import ContentManagement from '@/components/ContentManagement';
 import AdminGuide from '@/components/AdminGuide';
+import AdminWalletManagement from '@/components/AdminWalletManagement';
 import { showToast } from '@/components/Toast';
 import { 
   Users, 
@@ -30,7 +31,8 @@ import {
   Gamepad2,
   Edit,
   Save,
-  X
+  X,
+  Wallet
 } from 'lucide-react';
 
 interface User {
@@ -218,7 +220,7 @@ export default function Admin() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'content' | 'games' | 'reports' | 'guide'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'users' | 'content' | 'games' | 'wallet' | 'reports' | 'guide'>('dashboard');
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -686,6 +688,16 @@ export default function Admin() {
               Games Management
             </button>
             <button
+              onClick={() => setActiveTab('wallet')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'wallet'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Wallet Management
+            </button>
+            <button
               onClick={() => setActiveTab('reports')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'reports'
@@ -996,6 +1008,10 @@ export default function Admin() {
             </div>
           )}
         </div>
+      )}
+
+      {activeTab === 'wallet' && (
+        <AdminWalletManagement />
       )}
 
       {activeTab === 'reports' && (
