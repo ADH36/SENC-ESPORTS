@@ -67,10 +67,7 @@ class WalletService {
       }
     }
 
-    const id = crypto.randomUUID();
-    
     await db('wallets').insert({
-      id,
       user_id: userId,
       wallet_id: walletId!,
       balance: 0.00,
@@ -144,10 +141,7 @@ class WalletService {
       throw new Error('Daily request limit exceeded');
     }
 
-    const id = crypto.randomUUID();
-    
-    await db('wallet_requests').insert({
-      id,
+    const [insertedId] = await db('wallet_requests').insert({
       wallet_id: wallet.id,
       user_id: userId,
       type: requestData.type,
@@ -158,7 +152,7 @@ class WalletService {
       payment_details: requestData.paymentDetails
     });
 
-    return this.getWalletRequestById(id);
+    return this.getWalletRequestById(insertedId.toString());
   }
 
   async getWalletRequestById(id: string): Promise<WalletRequest> {
@@ -299,7 +293,6 @@ class WalletService {
 
         // Create transaction record
         await trx('wallet_transactions').insert({
-          id: crypto.randomUUID(),
           wallet_id: wallet.id,
           user_id: request.userId,
           type: transactionType,
@@ -343,9 +336,7 @@ class WalletService {
         });
 
       // Create transaction record
-      const transactionId = crypto.randomUUID();
-      await trx('wallet_transactions').insert({
-        id: transactionId,
+      const [transactionId] = await trx('wallet_transactions').insert({
         wallet_id: wallet.id,
         user_id: userId,
         type: amount > 0 ? 'admin_credit' : 'admin_debit',
