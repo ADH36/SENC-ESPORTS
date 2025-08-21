@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import { useTournamentStore } from '@/stores/tournamentStore';
 import { useSquadStore } from '@/stores/squadStore';
+import { useWalletStore } from '@/stores/walletStore';
 import Button from '@/components/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/Card';
 import Loading from '@/components/Loading';
@@ -14,13 +15,16 @@ import {
   Plus, 
   Eye,
   Clock,
-  MapPin
+  MapPin,
+  Wallet,
+  DollarSign
 } from 'lucide-react';
 
 export default function Dashboard() {
   const { user, isAuthenticated } = useAuthStore();
   const { tournaments, fetchTournaments, isLoading: tournamentsLoading } = useTournamentStore();
   const { squads, fetchUserSquads, isLoading: squadsLoading } = useSquadStore();
+  const { wallet, fetchWallet, isLoading: walletLoading } = useWalletStore();
   const [stats, setStats] = useState({
     totalTournaments: 0,
     activeTournaments: 0,
@@ -32,8 +36,9 @@ export default function Dashboard() {
     if (isAuthenticated && user) {
       fetchTournaments(1);
       fetchUserSquads();
+      fetchWallet();
     }
-  }, [isAuthenticated, user, fetchTournaments, fetchUserSquads]);
+  }, [isAuthenticated, user, fetchTournaments, fetchUserSquads, fetchWallet]);
 
   useEffect(() => {
     // Calculate stats from fetched data
@@ -79,6 +84,13 @@ export default function Dashboard() {
       href: '/squads',
       color: 'bg-green-600'
     },
+    {
+      title: 'My Wallet',
+      description: 'Manage your wallet & transactions',
+      icon: Wallet,
+      href: '/profile?tab=wallet',
+      color: 'bg-emerald-600'
+    },
     ...(user?.role === 'manager' || user?.role === 'admin' ? [{
       title: 'Create Tournament',
       description: 'Organize a new tournament',
@@ -109,7 +121,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <Card>
             <CardContent>
               <div className="flex items-center">
@@ -161,6 +173,23 @@ export default function Dashboard() {
                 <div>
                   <p className="text-2xl font-bold text-white">{stats.upcomingMatches}</p>
                   <p className="text-gray-400 text-sm">Upcoming Matches</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Wallet Card */}
+          <Card>
+            <CardContent>
+              <div className="flex items-center">
+                <div className="w-12 h-12 bg-emerald-600 rounded-lg flex items-center justify-center mr-4">
+                  <Wallet className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-green-400">
+                    {walletLoading ? '...' : wallet ? `$${wallet.balance.toFixed(2)}` : '$0.00'}
+                  </p>
+                  <p className="text-gray-400 text-sm">Wallet Balance</p>
                 </div>
               </div>
             </CardContent>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
 import Button from '@/components/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/Card';
@@ -297,10 +298,20 @@ function ChangePasswordModal({ isOpen, onClose, onSave, isLoading }: ChangePassw
 
 export default function Profile() {
   const { user, updateProfile, isLoading } = useAuthStore();
+  const location = useLocation();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'wallet'>('profile');
+
+  // Handle URL parameters to set active tab
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const tab = urlParams.get('tab');
+    if (tab === 'wallet') {
+      setActiveTab('wallet');
+    }
+  }, [location.search]);
 
   if (!user) {
     return <PageLoading text="Loading profile..." />;
