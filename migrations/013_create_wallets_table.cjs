@@ -5,7 +5,7 @@
 exports.up = function(knex) {
   return knex.schema.createTable('wallets', function(table) {
     table.increments('id').primary();
-    table.integer('user_id').unsigned().notNullable().references('id').inTable('users').onDelete('CASCADE');
+    table.uuid('user_id').notNullable().references('id').inTable('users').onDelete('CASCADE');
     table.string('wallet_id', 19).notNullable().unique(); // Format: 1234-5678-9012-3456
     table.decimal('balance', 15, 2).defaultTo(0.00);
     table.boolean('is_active').defaultTo(true);
