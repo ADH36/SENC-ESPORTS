@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useWalletStore } from '@/stores/walletStore';
+import { useAuthStore } from '@/stores/authStore';
 import { formatCurrency, formatTransactionDate } from '@/lib/utils';
 import Button from '@/components/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '@/components/Card';
@@ -326,6 +327,7 @@ function WithdrawalModal({ isOpen, onClose, onSubmit, isLoading, availableBalanc
 }
 
 export default function WalletDashboard() {
+  const { user } = useAuthStore();
   const {
     wallet,
     transactions,
@@ -463,45 +465,92 @@ export default function WalletDashboard() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-400 mb-1">Wallet ID</p>
-                <div className="flex items-center">
-                  <CreditCard className="w-4 h-4 text-gray-400 mr-2" />
-                  <span className="font-mono text-white">{wallet?.wallet_id || 'Loading...'}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Debit Card Design */}
+            <div className="relative">
+              <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 rounded-xl p-6 text-white shadow-2xl transform hover:scale-105 transition-transform duration-300 relative overflow-hidden">
+                {/* Card Background Pattern */}
+                <div className="absolute inset-0 opacity-10">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full transform translate-x-16 -translate-y-16"></div>
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full transform -translate-x-12 translate-y-12"></div>
                 </div>
-              </div>
-              
-              <div>
-                <p className="text-sm text-gray-400 mb-1">Current Balance</p>
-                <p className="text-3xl font-bold text-green-400">
-                  {wallet ? formatCurrency(wallet.balance) : '$0.00'}
-                </p>
+                
+                {/* Card Content */}
+                <div className="relative z-10">
+                  {/* Card Header */}
+                  <div className="flex justify-between items-start mb-8">
+                    <div>
+                      <h3 className="text-lg font-bold tracking-wider">SENC CARD</h3>
+                      <p className="text-blue-200 text-sm">ESPORTS WALLET</p>
+                    </div>
+                    <div className="w-12 h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-md flex items-center justify-center">
+                      <div className="w-8 h-6 bg-gradient-to-r from-yellow-300 to-yellow-500 rounded-sm"></div>
+                    </div>
+                  </div>
+                  
+                  {/* Card Number */}
+                  <div className="mb-6">
+                    <p className="text-xl font-mono tracking-widest">
+                      {wallet?.walletId ? 
+                        `${wallet.walletId.slice(0, 4)} ${wallet.walletId.slice(4, 8)} ${wallet.walletId.slice(8, 12)} ${wallet.walletId.slice(12, 16)}` 
+                        : '•••• •••• •••• ••••'
+                      }
+                    </p>
+                  </div>
+                  
+                  {/* Card Details */}
+                  <div className="flex justify-between items-end">
+                    <div>
+                      <p className="text-xs text-blue-200 uppercase tracking-wide mb-1">Cardholder</p>
+                      <p className="font-semibold text-sm uppercase tracking-wide">
+                        {user ? `${user.firstName} ${user.lastName}` : 'Loading...'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-blue-200 uppercase tracking-wide mb-1">Balance</p>
+                      <p className="font-bold text-lg text-green-300">
+                        {wallet ? formatCurrency(wallet.balance) : '$0.00'}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Valid Thru */}
+                  <div className="absolute bottom-6 right-6">
+                    <p className="text-xs text-blue-200 uppercase tracking-wide">Valid Thru</p>
+                    <p className="font-mono text-sm">12/29</p>
+                  </div>
+                </div>
               </div>
             </div>
             
-            <div className="space-y-3">
-              <Button 
-                onClick={() => setShowDepositModal(true)}
-                className="w-full"
-                disabled={!wallet?.is_active}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Request Deposit
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                onClick={() => setShowWithdrawalModal(true)}
-                className="w-full"
-                disabled={!wallet?.is_active || (wallet?.balance || 0) < 5}
-              >
-                <Minus className="w-4 h-4 mr-2" />
-                Request Withdrawal
-              </Button>
-            </div>
-          </div>
+            {/* Action Buttons */}
+            <div className="space-y-4">
+              <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                <h4 className="text-lg font-semibold text-white mb-4">Quick Actions</h4>
+                
+                <div className="space-y-3">
+                  <Button 
+                    onClick={() => setShowDepositModal(true)}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    disabled={!wallet?.isActive}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Request Deposit
+                  </Button>
+                  
+                  <Button 
+                     variant="ghost" 
+                     onClick={() => setShowWithdrawalModal(true)}
+                     className="w-full border border-red-600 text-red-400 hover:bg-red-600/10"
+                     disabled={!wallet?.isActive || (wallet?.balance || 0) < 5}
+                   >
+                     <Minus className="w-4 h-4 mr-2" />
+                     Request Withdrawal
+                   </Button>
+                 </div>
+                </div>
+              </div>
+           </div>
         </CardContent>
       </Card>
 

@@ -95,6 +95,9 @@ class WalletService {
       throw new Error('Wallet not found');
     }
 
+    // Convert balance from string to number
+    wallet.balance = parseFloat(wallet.balance);
+
     return wallet;
   }
 
@@ -115,6 +118,9 @@ class WalletService {
     if (!wallet) {
       throw new Error('Wallet not found');
     }
+
+    // Convert balance from string to number
+    wallet.balance = parseFloat(wallet.balance);
 
     return wallet;
   }
@@ -179,6 +185,9 @@ class WalletService {
       throw new Error('Wallet request not found');
     }
 
+    // Convert amount from string to number
+    request.amount = parseFloat(request.amount);
+
     return request;
   }
 
@@ -209,8 +218,14 @@ class WalletService {
       db('wallet_requests').where('user_id', userId).count('* as count').first()
     ]);
 
+    // Convert amounts from string to number
+    const convertedRequests = requests.map(request => ({
+      ...request,
+      amount: parseFloat(request.amount)
+    }));
+
     return {
-      requests,
+      requests: convertedRequests,
       total: Number(totalResult?.count) || 0
     };
   }
@@ -243,8 +258,16 @@ class WalletService {
       db('wallet_transactions').where('user_id', userId).count('* as count').first()
     ]);
 
+    // Convert amounts from string to number
+    const convertedTransactions = transactions.map(transaction => ({
+      ...transaction,
+      amount: parseFloat(transaction.amount),
+      balanceBefore: parseFloat(transaction.balanceBefore),
+      balanceAfter: parseFloat(transaction.balanceAfter)
+    }));
+
     return {
-      transactions,
+      transactions: convertedTransactions,
       total: Number(totalResult?.count) || 0
     };
   }
@@ -350,7 +373,7 @@ class WalletService {
 
       await trx.commit();
       
-      return await db('wallet_transactions')
+      const transaction = await db('wallet_transactions')
         .select(
           'id',
           'wallet_id as walletId',
@@ -369,6 +392,13 @@ class WalletService {
         )
         .where('id', transactionId)
         .first();
+
+      // Convert amounts from string to number
+      transaction.amount = parseFloat(transaction.amount);
+      transaction.balanceBefore = parseFloat(transaction.balanceBefore);
+      transaction.balanceAfter = parseFloat(transaction.balanceAfter);
+
+      return transaction;
     } catch (error) {
       await trx.rollback();
       throw error;
@@ -411,8 +441,14 @@ class WalletService {
         : db('wallet_requests').count('* as count').first()
     ]);
 
+    // Convert amounts from string to number
+    const convertedRequests = requests.map(request => ({
+      ...request,
+      amount: parseFloat(request.amount)
+    }));
+
     return {
-      requests,
+      requests: convertedRequests,
       total: Number(totalResult?.count) || 0
     };
   }
@@ -443,8 +479,14 @@ class WalletService {
       db('wallets').where('is_active', true).count('* as count').first()
     ]);
 
+    // Convert balance from string to number
+    const convertedWallets = wallets.map(wallet => ({
+      ...wallet,
+      balance: parseFloat(wallet.balance)
+    }));
+
     return {
-      wallets,
+      wallets: convertedWallets,
       total: Number(totalResult?.count) || 0
     };
   }
