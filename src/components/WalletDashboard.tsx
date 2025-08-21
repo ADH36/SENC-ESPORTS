@@ -19,7 +19,8 @@ import {
   CreditCard,
   ArrowUpRight,
   ArrowDownLeft,
-  RefreshCw
+  RefreshCw,
+  X
 } from 'lucide-react';
 
 interface DepositModalProps {
@@ -491,7 +492,7 @@ export default function WalletDashboard() {
               </Button>
               
               <Button 
-                variant="outline" 
+                variant="ghost" 
                 onClick={() => setShowWithdrawalModal(true)}
                 className="w-full"
                 disabled={!wallet?.is_active || (wallet?.balance || 0) < 5}
