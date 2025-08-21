@@ -5,6 +5,7 @@ import Card, { CardContent, CardHeader, CardTitle } from '@/components/Card';
 import Input from '@/components/Input';
 import Loading, { PageLoading } from '@/components/Loading';
 import Modal from '@/components/Modal';
+import WalletDashboard from '@/components/WalletDashboard';
 import { 
   User, 
   Mail, 
@@ -17,7 +18,8 @@ import {
   EyeOff,
   Trophy,
   Users,
-  Target
+  Target,
+  Wallet
 } from 'lucide-react';
 
 interface EditProfileModalProps {
@@ -298,6 +300,7 @@ export default function Profile() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [activeTab, setActiveTab] = useState<'profile' | 'wallet'>('profile');
 
   if (!user) {
     return <PageLoading text="Loading profile..." />;
@@ -343,10 +346,39 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gray-900 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Info */}
-          <div className="lg:col-span-2 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Tab Navigation */}
+        <div className="mb-8">
+          <div className="flex space-x-4 border-b border-gray-700">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`px-4 py-2 font-medium transition-colors ${
+                activeTab === 'profile'
+                  ? 'text-blue-400 border-b-2 border-blue-400'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <User className="w-4 h-4 mr-2 inline" />
+              Profile
+            </button>
+            <button
+              onClick={() => setActiveTab('wallet')}
+              className={`px-4 py-2 font-medium transition-colors ${
+                activeTab === 'wallet'
+                  ? 'text-blue-400 border-b-2 border-blue-400'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Wallet className="w-4 h-4 mr-2 inline" />
+              Wallet
+            </button>
+          </div>
+        </div>
+
+        {activeTab === 'profile' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Profile Info */}
+            <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -469,10 +501,10 @@ export default function Profile() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+            </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
+            {/* Sidebar */}
+            <div className="space-y-6">
             {/* Quick Stats */}
             <Card>
               <CardHeader>
@@ -519,8 +551,15 @@ export default function Profile() {
                 </div>
               </CardContent>
             </Card>
+            </div>
           </div>
-        </div>
+        )}
+
+        {activeTab === 'wallet' && (
+          <div className="max-w-4xl mx-auto">
+            <WalletDashboard />
+          </div>
+        )}
       </div>
 
       {/* Edit Profile Modal */}
